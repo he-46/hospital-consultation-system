@@ -163,12 +163,55 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
         
         return user;
     }
+    
+    private static final String REDIS_CODE_PREFIX = "verify:code:";
+
+    @Override
+    public String sendVerifyCode(String phone) {
+        // 先验证手机号是否已注册
+        LambdaQueryWrapper<User> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(User::getPhone, phone);
+        User user = this.getOne(wrapper);
+        if (user == null) {
+            throw new RuntimeException("该手机号未注册");
+        }
+        
+        // 生成6位随机验证码
+        String code = String.format("%06d", new java.util.Random().nextInt(1000000));
+        
+        // 存储到Redis，5分钟有效
+        redisUtil.set(REDIS_CODE_PREFIX + phone, code, 5, TimeUnit.MINUTES);
+        
+        // TODO: 实际项目中这里应该调用短信服务发送验证码
+        // 目前模拟发送，打印到控制台
+        System.out.println("【短信验证码】手机号：" + phone + "，验证码：" + code);
+        
+        return code;
+    }
+
+    @Override
+    public boolean verifyCode(String phone, String code) {
+        String storedCode = (String) redisUtil.get(REDIS_CODE_PREFIX + phone);
+        if (storedCode == null) {
+            throw new RuntimeException("验证码已过期，请重新获取");
+        }
+        if (!storedCode.equals(code)) {
+            throw new RuntimeException("验证码错误");
+        }
+        // 验证成功后删除验证码
+        redisUtil.delete(REDIS_CODE_PREFIX + phone);
+        return true;
+    }
 
     @Override
     public boolean resetPassword(String phone, String password) {
+        // 使用MD5+盐码加密密码
+        String salt = PasswordUtil.generateSalt();
+        String encryptedPassword = PasswordUtil.encryptPassword(password, salt);
+        
         LambdaUpdateWrapper<User> wrapper = new LambdaUpdateWrapper<>();
         wrapper.eq(User::getPhone, phone)
-                .set(User::getPassword, password)
+                .set(User::getPassword, encryptedPassword + ":" + salt)
                 .set(User::getUpdateTime, LocalDateTime.now());
         
         return this.update(wrapper);
