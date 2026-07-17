@@ -32,6 +32,7 @@ public class JwtInterceptor implements HandlerInterceptor {
             "/user/register",
             "/user/verifyPhone",
             "/user/resetPassword",
+            "/user/logout",
             // 配置相关
             "/config/list",
             "/config/getByKey",

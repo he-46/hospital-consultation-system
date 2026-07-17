@@ -1,10 +1,10 @@
 <template>
   <header class="header">
     <div class="header-content">
-      <div class="logo">
+      <router-link to="/home" class="logo">
         <el-icon><Plus /></el-icon>
         <span>健康之路</span>
-      </div>
+      </router-link>
       
       <nav class="nav">
         <router-link to="/home" class="nav-item" :class="{ active: $route.path === '/home' }">首页</router-link>
@@ -57,9 +57,9 @@
 </template>
 
 <script>
-import { ref, computed, onMounted, watch } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import { logout } from '@/api/user'
+import axios from 'axios'
 
 export default {
   name: 'Header',
@@ -71,18 +71,14 @@ export default {
       return !!localStorage.getItem('token')
     })
     
-    // 计算头像src
     const avatarSrc = computed(() => {
       const avatar = userInfo.value.avatar
       if (!avatar) return ''
-      // 如果是完整URL直接返回
       if (avatar.startsWith('http')) return avatar
-      // 如果是 /uploads/ 开头，拼接后端地址
       if (avatar.startsWith('/uploads/')) {
         return 'http://localhost:8080' + avatar
       }
-      // 其他情况
-      return avatar
+      return '/img/default-avatar.png'
     })
     
     const loadUserInfo = () => {
@@ -97,11 +93,6 @@ export default {
     }
     
     onMounted(() => {
-      loadUserInfo()
-    })
-    
-    // 监听路由变化，重新加载用户信息
-    watch(() => router.currentRoute.value.path, () => {
       loadUserInfo()
     })
     
@@ -123,13 +114,14 @@ export default {
           router.push('/personal?tab=consults')
           break
         case 'logout':
-          // 先清除本地数据
+          try {
+            await axios.post('/api/user/logout')
+          } catch (e) {
+            // 忽略错误
+          }
           localStorage.removeItem('token')
           localStorage.removeItem('userInfo')
-          userInfo.value = {}
-          // 尝试调用退出接口（不等待结果）
-          logout().catch(() => {})
-          router.push('/home')
+          router.push('/login')
           break
       }
     }
@@ -170,10 +162,7 @@ export default {
     font-size: 22px;
     font-weight: bold;
     gap: 8px;
-    
-    .el-icon {
-      font-size: 28px;
-    }
+    text-decoration: none;
   }
   
   .nav {
