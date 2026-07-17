@@ -1,0 +1,23 @@
+# Database (可选 - 根据需要忽略)
+# 数据库导入/
+
+# Temporary files
+*.tmp
+*.bak
+*.swp
+*~
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE
+.idea/
+*.iml
+.vscode/
+
+# Build outputs
+*/target/
+*/dist/
+*/node_modules/
+*/.cache/
