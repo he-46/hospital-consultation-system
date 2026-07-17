@@ -1,0 +1,47 @@
+package org.example.back.controller;
+
+import org.example.back.common.Result;
+import org.example.back.entity.Department;
+import org.example.back.service.DepartmentService;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
+
+/**
+ * 科室控制器
+ */
+@RestController
+@RequestMapping("/department")
+public class DepartmentController {
+
+    @Autowired
+    private DepartmentService departmentService;
+
+    /**
+     * 获取一级科室列表
+     */
+    @GetMapping("/primary")
+    public Result<?> getPrimaryDepartments() {
+        List<Department> departments = departmentService.getPrimaryDepartments();
+        return Result.success(departments);
+    }
+
+    /**
+     * 获取二级科室列表
+     */
+    @GetMapping("/secondary")
+    public Result<?> getSecondaryDepartments(@RequestParam Long parentId) {
+        List<Department> departments = departmentService.getSecondaryDepartments(parentId);
+        return Result.success(departments);
+    }
+
+    /**
+     * 获取科室树形结构
+     */
+    @GetMapping("/tree")
+    public Result<?> getDepartmentTree() {
+        List<Department> departments = departmentService.getDepartmentTree();
+        return Result.success(departments);
+    }
+}
