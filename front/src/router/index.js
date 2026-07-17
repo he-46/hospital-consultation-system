@@ -48,7 +48,20 @@ const routes = [
   {
     path: '/reservation/:doctorId',
     name: 'Reservation',
-    component: () => import('@/views/Reservation.vue')
+    component: () => import('@/views/Reservation.vue'),
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/reservation-pay/:id',
+    name: 'ReservationPay',
+    component: () => import('@/views/ReservationPay.vue'),
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/reservation-success/:id',
+    name: 'ReservationSuccess',
+    component: () => import('@/views/ReservationSuccess.vue'),
+    meta: { requiresAuth: true }
   },
   {
     path: '/article',

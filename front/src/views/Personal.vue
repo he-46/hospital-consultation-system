@@ -69,6 +69,15 @@
           
           <!-- 我的挂号 -->
           <div v-else-if="activeTab === 'appointments'" class="order-list">
+            <div class="status-filter">
+              <el-radio-group v-model="apptFilter" size="small" @change="loadAppointments">
+                <el-radio-button :label="0">全部</el-radio-button>
+                <el-radio-button :label="1">待支付</el-radio-button>
+                <el-radio-button :label="2">已支付</el-radio-button>
+                <el-radio-button :label="3">已完成</el-radio-button>
+                <el-radio-button :label="4">已取消</el-radio-button>
+              </el-radio-group>
+            </div>
             <div v-if="appointments.length === 0" class="empty">暂无挂号记录</div>
             <div v-else v-for="item in appointments" :key="item.id" class="order-item">
               <div class="order-header">
@@ -76,11 +85,27 @@
                 <span class="status" :class="getStatusClass(item.status)">{{ getStatusText(item.status) }}</span>
               </div>
               <div class="order-content">
-                <p>医生: {{ item.doctorName }}</p>
+                <p>医生: {{ item.doctorName }} <span class="tag">{{ item.doctorTitle }}</span></p>
+                <p>医院: {{ item.hospitalName }}</p>
                 <p>预约时间: {{ item.appointmentDate }} {{ item.appointmentTime }}</p>
                 <p>就诊人: {{ item.patientName }}</p>
+                <p>挂号费: ¥{{ item.amount }}</p>
+              </div>
+              <div class="order-footer" v-if="item.status === 1 || item.status === 2 || item.status === 3">
+                <el-button v-if="item.status === 1" type="primary" size="small" @click="$router.push(`/reservation-pay/${item.id}`)">去支付</el-button>
+                <el-button v-if="item.status === 1 || item.status === 2" type="danger" size="small" @click="handleCancelAppointment(item)">取消</el-button>
+                <el-button v-if="item.status === 3" type="success" size="small" @click="$router.push(`/review/${item.id}`)">评价</el-button>
               </div>
             </div>
+            <el-pagination
+              v-if="apptTotal > apptSize"
+              class="pagination"
+              v-model:current-page="apptPage"
+              :page-size="apptSize"
+              :total="apptTotal"
+              layout="prev, pager, next"
+              @current-change="loadAppointments"
+            />
           </div>
           
           <!-- 我的咨询 -->
@@ -177,12 +202,13 @@
 </template>
 
 <script>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import { useRoute } from 'vue-router'
-import { ElMessage } from 'element-plus'
+import { ElMessage, ElMessageBox } from 'element-plus'
 import { Plus } from '@element-plus/icons-vue'
 import { getUserInfo, updateUserInfo } from '@/api/user'
 import { uploadAvatar } from '@/api/file'
+import { getAppointmentList, cancelAppointment } from '@/api/appointment'
 import Header from '@/components/Header.vue'
 import Footer from '@/components/Footer.vue'
 
@@ -197,6 +223,10 @@ export default {
     const avatarUrl = ref('')
     const avatarFile = ref(null)
     const appointments = ref([])
+    const apptFilter = ref(0)
+    const apptPage = ref(1)
+    const apptSize = ref(5)
+    const apptTotal = ref(0)
     const consults = ref([])
     const followDoctors = ref([])
     const followHospitals = ref([])
@@ -224,13 +254,44 @@ export default {
     const loadUserInfo = async () => {
       try {
         const res = await getUserInfo()
-        console.log('个人中心获取用户信息:', JSON.stringify(res.data, null, 2))
-        console.log('avatar字段值:', res.data?.avatar)
         userForm.value = res.data || {}
       } catch (error) {
         console.error(error)
       }
     }
+
+    const loadAppointments = async () => {
+      try {
+        const res = await getAppointmentList({ status: apptFilter.value, page: apptPage.value, size: apptSize.value })
+        const data = res.data
+        appointments.value = data.records || []
+        apptTotal.value = data.total || 0
+      } catch (error) {
+        console.error(error)
+      }
+    }
+
+    const handleCancelAppointment = async (item) => {
+      try {
+        await ElMessageBox.confirm('确定要取消此挂号吗？', '提示', { confirmButtonText: '确定', cancelButtonText: '取消', type: 'warning' })
+        await cancelAppointment(item.id)
+        ElMessage.success('取消成功')
+        loadAppointments()
+      } catch (error) {
+        if (error !== 'cancel') console.error(error)
+      }
+    }
+
+    watch(activeTab, (val) => {
+      if (val === 'appointments') {
+        apptPage.value = 1
+        loadAppointments()
+      }
+    })
+
+    watch(apptFilter, () => {
+      apptPage.value = 1
+    })
     
     const getAvatarUrl = (avatar) => {
       if (!avatar) {
@@ -311,6 +372,9 @@ export default {
     
     onMounted(() => {
       loadUserInfo()
+      if (activeTab.value === 'appointments') {
+        loadAppointments()
+      }
     })
     
     return {
@@ -318,6 +382,10 @@ export default {
       userForm,
       avatarUrl,
       appointments,
+      apptFilter,
+      apptPage,
+      apptSize,
+      apptTotal,
       consults,
       followDoctors,
       followHospitals,
@@ -329,6 +397,8 @@ export default {
       currentTitle,
       saveProfile,
       submitFeedback,
+      loadAppointments,
+      handleCancelAppointment,
       getStatusText,
       getStatusClass,
       getConsultStatusText,
@@ -394,6 +464,15 @@ export default {
   color: #999;
 }
 
+.status-filter {
+  margin-bottom: 20px;
+}
+
+.pagination {
+  margin-top: 20px;
+  justify-content: center;
+}
+
 .order-item {
   padding: 15px;
   border: 1px solid #eee;
@@ -417,6 +496,23 @@ export default {
   
   .order-content {
     p { font-size: 14px; color: #666; margin-bottom: 5px; }
+    .tag {
+      background: #1e88e5;
+      color: white;
+      padding: 1px 6px;
+      border-radius: 3px;
+      font-size: 11px;
+      margin-left: 6px;
+    }
+  }
+
+  .order-footer {
+    margin-top: 10px;
+    padding-top: 10px;
+    border-top: 1px solid #f0f0f0;
+    display: flex;
+    gap: 10px;
+    justify-content: flex-end;
   }
 }
 

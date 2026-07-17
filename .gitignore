@@ -28,3 +28,6 @@ Thumbs.db
 */dist/
 */node_modules/
 */.cache/
+
+# Redis
+dump.rdb

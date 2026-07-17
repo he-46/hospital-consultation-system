@@ -62,6 +62,7 @@ import { ref, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { getDoctorDetail } from '@/api/doctor'
+import { createAppointment } from '@/api/appointment'
 import Header from '@/components/Header.vue'
 import Footer from '@/components/Footer.vue'
 
@@ -97,18 +98,26 @@ export default {
         const res = await getDoctorDetail(route.params.doctorId)
         doctor.value = res.data.doctor || {}
         schedules.value = res.data.schedules || []
+        if (route.query.scheduleId) {
+          form.value.scheduleId = Number(route.query.scheduleId)
+          selectSchedule(form.value.scheduleId)
+        }
       } catch (error) {
         console.error(error)
       }
     }
     
     const selectSchedule = (id) => {
-      console.log('Selected schedule:', id)
+      const s = schedules.value.find(item => item.id === id)
+      if (s) {
+        form.value.appointmentDate = s.scheduleDate
+        form.value.appointmentTime = s.timeSlot
+      }
     }
-    
+
     const submitReservation = async () => {
       if (!formRef.value) return
-      
+
       await formRef.value.validate(async (valid) => {
         if (valid) {
           if (!localStorage.getItem('token')) {
@@ -116,15 +125,25 @@ export default {
             router.push('/login')
             return
           }
-          
+
           loading.value = true
           try {
-            // 实际调用预约接口
-            ElMessage.success('预约成功！')
-            router.push('/personal?tab=appointments')
+            const res = await createAppointment({
+              doctorId: doctor.value.id,
+              hospitalId: doctor.value.hospitalId,
+              scheduleId: form.value.scheduleId,
+              patientName: form.value.patientName,
+              patientPhone: form.value.patientPhone,
+              patientIdCard: form.value.patientIdCard,
+              patientGender: 1,
+              patientAge: null,
+              appointmentDate: form.value.appointmentDate,
+              appointmentTime: form.value.appointmentTime,
+              diseaseDesc: form.value.diseaseDesc
+            })
+            router.push('/reservation-pay/' + res.data.id)
           } catch (error) {
             console.error(error)
-            ElMessage.error('预约失败')
           } finally {
             loading.value = false
           }

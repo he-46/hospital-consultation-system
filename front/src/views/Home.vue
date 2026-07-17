@@ -31,7 +31,7 @@
             </div>
             <span>找医生</span>
           </router-link>
-          <router-link to="/reservation" class="entry-item">
+          <router-link to="/doctor" class="entry-item">
             <div class="entry-icon orange">
               <el-icon><Calendar /></el-icon>
             </div>
