@@ -4,6 +4,7 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import org.example.back.common.JwtUtil;
+import org.example.back.common.PasswordUtil;
 import org.example.back.common.RedisUtil;
 import org.example.back.entity.User;
 import org.example.back.mapper.UserMapper;
@@ -37,8 +38,8 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
             throw new RuntimeException("用户不存在");
         }
         
-        // 直接比较明文密码
-        if (!password.equals(user.getPassword())) {
+        // 使用MD5+盐码验证密码
+        if (!PasswordUtil.verifyStoredPassword(password, user.getPassword())) {
             throw new RuntimeException("密码错误");
         }
         
@@ -81,6 +82,12 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
             }
         }
         
+        // 使用MD5+盐码加密密码
+        String salt = PasswordUtil.generateSalt();
+        String encryptedPassword = PasswordUtil.encryptPassword(user.getPassword(), salt);
+        // 存储格式：加密密码:盐码
+        user.setPassword(encryptedPassword + ":" + salt);
+        
         // 设置默认值
         user.setStatus(1);
         user.setCreateTime(LocalDateTime.now());
@@ -108,14 +115,18 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
             throw new RuntimeException("用户不存在");
         }
         
-        // 明文比较原密码
-        if (!oldPassword.equals(user.getPassword())) {
+        // 使用MD5+盐码验证原密码
+        if (!PasswordUtil.verifyStoredPassword(oldPassword, user.getPassword())) {
             throw new RuntimeException("原密码错误");
         }
         
+        // 生成新的盐码并加密新密码
+        String salt = PasswordUtil.generateSalt();
+        String encryptedPassword = PasswordUtil.encryptPassword(newPassword, salt);
+        
         LambdaUpdateWrapper<User> wrapper = new LambdaUpdateWrapper<>();
         wrapper.eq(User::getId, userId)
-                .set(User::getPassword, newPassword)
+                .set(User::getPassword, encryptedPassword + ":" + salt)
                 .set(User::getUpdateTime, LocalDateTime.now());
         
         return this.update(wrapper);
@@ -152,12 +163,55 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
         
         return user;
     }
+    
+    private static final String REDIS_CODE_PREFIX = "verify:code:";
+
+    @Override
+    public String sendVerifyCode(String phone) {
+        // 先验证手机号是否已注册
+        LambdaQueryWrapper<User> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(User::getPhone, phone);
+        User user = this.getOne(wrapper);
+        if (user == null) {
+            throw new RuntimeException("该手机号未注册");
+        }
+        
+        // 生成6位随机验证码
+        String code = String.format("%06d", new java.util.Random().nextInt(1000000));
+        
+        // 存储到Redis，5分钟有效
+        redisUtil.set(REDIS_CODE_PREFIX + phone, code, 5, TimeUnit.MINUTES);
+        
+        // TODO: 实际项目中这里应该调用短信服务发送验证码
+        // 目前模拟发送，打印到控制台
+        System.out.println("【短信验证码】手机号：" + phone + "，验证码：" + code);
+        
+        return code;
+    }
+
+    @Override
+    public boolean verifyCode(String phone, String code) {
+        String storedCode = (String) redisUtil.get(REDIS_CODE_PREFIX + phone);
+        if (storedCode == null) {
+            throw new RuntimeException("验证码已过期，请重新获取");
+        }
+        if (!storedCode.equals(code)) {
+            throw new RuntimeException("验证码错误");
+        }
+        // 验证成功后删除验证码
+        redisUtil.delete(REDIS_CODE_PREFIX + phone);
+        return true;
+    }
 
     @Override
     public boolean resetPassword(String phone, String password) {
+        // 使用MD5+盐码加密密码
+        String salt = PasswordUtil.generateSalt();
+        String encryptedPassword = PasswordUtil.encryptPassword(password, salt);
+        
         LambdaUpdateWrapper<User> wrapper = new LambdaUpdateWrapper<>();
         wrapper.eq(User::getPhone, phone)
-                .set(User::getPassword, password)
+                .set(User::getPassword, encryptedPassword + ":" + salt)
                 .set(User::getUpdateTime, LocalDateTime.now());
         
         return this.update(wrapper);

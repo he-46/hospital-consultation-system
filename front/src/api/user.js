@@ -61,6 +61,24 @@ export function verifyPhone(phone) {
   })
 }
 
+// 发送验证码
+export function sendCode(phone) {
+  return request({
+    url: '/user/sendCode',
+    method: 'post',
+    data: { phone }
+  })
+}
+
+// 验证验证码
+export function checkCode(data) {
+  return request({
+    url: '/user/checkCode',
+    method: 'post',
+    data
+  })
+}
+
 // 重置密码（忘记密码）
 export function resetPassword(data) {
   return request({
