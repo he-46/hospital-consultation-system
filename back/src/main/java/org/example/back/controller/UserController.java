@@ -169,6 +169,51 @@ public class UserController {
             return Result.error(e.getMessage());
         }
     }
+    
+    /**
+     * 发送验证码
+     */
+    @PostMapping("/sendCode")
+    public Result<?> sendCode(@RequestBody Map<String, String> params) {
+        String phone = params.get("phone");
+        
+        if (phone == null || phone.isEmpty()) {
+            return Result.error("请输入手机号");
+        }
+        
+        try {
+            String code = userService.sendVerifyCode(phone);
+            // 调试模式下返回验证码方便测试（生产环境应删除）
+            Map<String, String> result = new java.util.HashMap<>();
+            result.put("code", code);
+            return Result.success("验证码已发送", result);
+        } catch (Exception e) {
+            return Result.error(e.getMessage());
+        }
+    }
+    
+    /**
+     * 验证验证码
+     */
+    @PostMapping("/checkCode")
+    public Result<?> checkCode(@RequestBody Map<String, String> params) {
+        String phone = params.get("phone");
+        String code = params.get("code");
+        
+        if (phone == null || phone.isEmpty()) {
+            return Result.error("请输入手机号");
+        }
+        if (code == null || code.isEmpty()) {
+            return Result.error("请输入验证码");
+        }
+        
+        try {
+            boolean result = userService.verifyCode(phone, code);
+            return Result.success("验证成功");
+        } catch (Exception e) {
+            return Result.error(e.getMessage());
+        }
+    }
 
     /**
      * 忘记密码 - 重置密码

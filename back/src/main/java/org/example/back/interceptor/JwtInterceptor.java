@@ -31,6 +31,8 @@ public class JwtInterceptor implements HandlerInterceptor {
             "/user/login",
             "/user/register",
             "/user/verifyPhone",
+            "/user/sendCode",
+            "/user/checkCode",
             "/user/resetPassword",
             "/user/logout",
             // 配置相关
