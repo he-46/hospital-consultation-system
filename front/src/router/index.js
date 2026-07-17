@@ -48,7 +48,20 @@ const routes = [
   {
     path: '/reservation/:doctorId',
     name: 'Reservation',
-    component: () => import('@/views/Reservation.vue')
+    component: () => import('@/views/Reservation.vue'),
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/reservation-pay/:id',
+    name: 'ReservationPay',
+    component: () => import('@/views/ReservationPay.vue'),
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/reservation-success/:id',
+    name: 'ReservationSuccess',
+    component: () => import('@/views/ReservationSuccess.vue'),
+    meta: { requiresAuth: true }
   },
   {
     path: '/article',
@@ -79,6 +92,18 @@ const routes = [
     path: '/personal',
     name: 'Personal',
     component: () => import('@/views/Personal.vue'),
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/feedback',
+    name: 'Feedback',
+    component: () => import('@/views/Feedback.vue'),
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/messages',
+    name: 'Messages',
+    component: () => import('@/views/Messages.vue'),
     meta: { requiresAuth: true }
   }
 ]

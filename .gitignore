@@ -1,6 +1,13 @@
 # Database (可选 - 根据需要忽略)
 # 数据库导入/
 
+# Config files (敏感配置)
+*.yml
+*.yaml
+*.properties
+!*.example.yml
+!*.example.properties
+
 # Temporary files
 *.tmp
 *.bak
@@ -21,3 +28,6 @@ Thumbs.db
 */dist/
 */node_modules/
 */.cache/
+
+# Redis
+dump.rdb

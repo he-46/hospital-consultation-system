@@ -31,7 +31,7 @@
             </div>
             <span>找医生</span>
           </router-link>
-          <router-link to="/reservation" class="entry-item">
+          <router-link to="/doctor" class="entry-item">
             <div class="entry-icon orange">
               <el-icon><Calendar /></el-icon>
             </div>
@@ -156,10 +156,7 @@
 
 <script>
 import { ref, onMounted } from 'vue'
-import { getHotHospitals } from '@/api/hospital'
-import { getHotDoctors } from '@/api/doctor'
-import { getHotDiseases } from '@/api/disease'
-import { getHotArticles } from '@/api/article'
+import { getIndexData } from '@/api/home'
 import Header from '@/components/Header.vue'
 import Footer from '@/components/Footer.vue'
 
@@ -182,16 +179,11 @@ export default {
     
     const loadData = async () => {
       try {
-        const [hospitals, doctors, diseases, articles] = await Promise.all([
-          getHotHospitals(8),
-          getHotDoctors(10),
-          getHotDiseases(8),
-          getHotArticles(5)
-        ])
-        hotHospitals.value = hospitals.data || []
-        hotDoctors.value = doctors.data || []
-        hotDiseases.value = diseases.data || []
-        hotArticles.value = articles.data || []
+        const res = await getIndexData()
+        hotHospitals.value = res.data.hospitals || []
+        hotDoctors.value = res.data.doctors || []
+        hotDiseases.value = res.data.diseases || []
+        hotArticles.value = res.data.articles || []
       } catch (error) {
         console.error('加载数据失败:', error)
       }

@@ -46,6 +46,8 @@
                 <el-dropdown-item command="personal">个人中心</el-dropdown-item>
                 <el-dropdown-item command="appointments">我的挂号</el-dropdown-item>
                 <el-dropdown-item command="consults">我的咨询</el-dropdown-item>
+                <el-dropdown-item command="feedback">我的反馈</el-dropdown-item>
+                <el-dropdown-item command="messages">我的消息</el-dropdown-item>
                 <el-dropdown-item divided command="logout">退出登录</el-dropdown-item>
               </el-dropdown-menu>
             </template>
@@ -122,6 +124,12 @@ export default {
           break
         case 'consults':
           router.push('/personal?tab=consults')
+          break
+        case 'feedback':
+          router.push('/feedback')
+          break
+        case 'messages':
+          router.push('/messages')
           break
         case 'logout':
           try {
