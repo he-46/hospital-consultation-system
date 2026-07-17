@@ -86,8 +86,10 @@ export default {
           loading.value = true
           try {
             const res = await login(form)
+            console.log('登录返回数据:', res.data)
             localStorage.setItem('token', res.data.token)
             localStorage.setItem('userInfo', JSON.stringify(res.data))
+            console.log('保存的userInfo:', res.data)
             ElMessage.success('登录成功')
             router.push('/home')
           } catch (error) {

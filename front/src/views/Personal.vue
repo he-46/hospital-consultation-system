@@ -36,6 +36,19 @@
           <!-- 个人资料 -->
           <div v-if="activeTab === 'profile'" class="profile-form">
             <el-form :model="userForm" label-width="100px">
+              <el-form-item label="头像">
+                <el-upload
+                  class="avatar-uploader"
+                  action="#"
+                  :show-file-list="false"
+                  :auto-upload="false"
+                  :on-change="handleAvatarChange"
+                >
+                  <img v-if="avatarUrl" :src="avatarUrl" class="avatar" />
+                  <img v-else-if="userForm.avatar" :src="getAvatarUrl(userForm.avatar)" class="avatar" />
+                  <el-icon v-else class="avatar-uploader-icon"><Plus /></el-icon>
+                </el-upload>
+              </el-form-item>
               <el-form-item label="用户名">
                 <el-input v-model="userForm.username" disabled />
               </el-form-item>
@@ -167,18 +180,22 @@
 import { ref, computed, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 import { ElMessage } from 'element-plus'
+import { Plus } from '@element-plus/icons-vue'
 import { getUserInfo, updateUserInfo } from '@/api/user'
+import { uploadAvatar } from '@/api/file'
 import Header from '@/components/Header.vue'
 import Footer from '@/components/Footer.vue'
 
 export default {
   name: 'Personal',
-  components: { Header, Footer },
+  components: { Header, Footer, Plus },
   setup() {
     const route = useRoute()
     const activeTab = ref(route.query.tab || 'profile')
     
     const userForm = ref({})
+    const avatarUrl = ref('')
+    const avatarFile = ref(null)
     const appointments = ref([])
     const consults = ref([])
     const followDoctors = ref([])
@@ -207,16 +224,57 @@ export default {
     const loadUserInfo = async () => {
       try {
         const res = await getUserInfo()
+        console.log('个人中心获取用户信息:', JSON.stringify(res.data, null, 2))
+        console.log('avatar字段值:', res.data?.avatar)
         userForm.value = res.data || {}
       } catch (error) {
         console.error(error)
       }
     }
     
+    const getAvatarUrl = (avatar) => {
+      if (!avatar) {
+        console.log('avatar为空')
+        return ''
+      }
+      console.log('处理avatar:', avatar)
+      if (avatar.startsWith('http')) return avatar
+      if (avatar.startsWith('/uploads/')) {
+        return '/api/file' + avatar  // 通过后端 API 访问
+      }
+      return avatar
+    }
+    
+    const handleAvatarChange = (file) => {
+      const isImage = file.raw.type.startsWith('image/')
+      const isLt2M = file.raw.size / 1024 / 1024 < 2
+      
+      if (!isImage) {
+        ElMessage.error('只能上传图片文件!')
+        return
+      }
+      if (!isLt2M) {
+        ElMessage.error('图片大小不能超过 2MB!')
+        return
+      }
+      
+      avatarUrl.value = URL.createObjectURL(file.raw)
+      avatarFile.value = file.raw
+    }
+    
     const saveProfile = async () => {
       try {
+        // 如果有新头像，先上传
+        if (avatarFile.value) {
+          const uploadRes = await uploadAvatar(avatarFile.value)
+          userForm.value.avatar = uploadRes.data.url
+          avatarFile.value = null
+        }
+        
         await updateUserInfo(userForm.value)
         ElMessage.success('保存成功')
+        // 同步更新 localStorage 中的用户信息
+        localStorage.setItem('userInfo', JSON.stringify(userForm.value))
       } catch (error) {
         console.error(error)
       }
@@ -258,6 +316,7 @@ export default {
     return {
       activeTab,
       userForm,
+      avatarUrl,
       appointments,
       consults,
       followDoctors,
@@ -273,7 +332,9 @@ export default {
       getStatusText,
       getStatusClass,
       getConsultStatusText,
-      getConsultStatusClass
+      getConsultStatusClass,
+      getAvatarUrl,
+      handleAvatarChange
     }
   }
 }
@@ -398,6 +459,44 @@ export default {
   border-bottom: 1px solid #eee;
   
   p { font-size: 14px; color: #666; margin-bottom: 10px; }
-  .meta { display: flex; justify-content: space-between; color: #999; font-size: 12px; }
+  
+  .meta {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 12px;
+    color: #999;
+  }
+}
+
+.avatar-uploader {
+  :deep(.el-upload) {
+    border: 1px dashed #d9d9d9;
+    border-radius: 50%;
+    cursor: pointer;
+    position: relative;
+    overflow: hidden;
+    transition: border-color 0.3s;
+    
+    &:hover { border-color: #1e88e5; }
+  }
+  
+  .avatar {
+    width: 100px;
+    height: 100px;
+    border-radius: 50%;
+    object-fit: cover;
+    display: block;
+  }
+  
+  .avatar-uploader-icon {
+    width: 100px;
+    height: 100px;
+    font-size: 28px;
+    color: #8c939d;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
 }
 </style>

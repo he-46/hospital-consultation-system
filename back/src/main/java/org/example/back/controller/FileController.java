@@ -2,11 +2,18 @@ package org.example.back.controller;
 
 import org.example.back.common.Result;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.io.FileSystemResource;
+import org.springframework.core.io.Resource;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
+import javax.servlet.http.HttpServletRequest;
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Files;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
@@ -64,7 +71,7 @@ public class FileController {
             // 保存文件
             file.transferTo(destFile);
             
-            // 返回访问路径
+            // 返回访问路径（通过 /api/file/uploads/xxx 访问）
             String fileUrl = "/uploads/" + newFileName;
             
             Map<String, String> result = new HashMap<>();
@@ -75,6 +82,39 @@ public class FileController {
         } catch (IOException e) {
             e.printStackTrace();
             return Result.error("上传失败");
+        }
+    }
+    
+    /**
+     * 获取文件（通过 Controller 提供静态文件访问）
+     */
+    @GetMapping("/uploads/**")
+    public ResponseEntity<Resource> getFile(HttpServletRequest request) {
+        try {
+            String uri = request.getRequestURI();
+            String filename = uri.substring(uri.lastIndexOf("/uploads/") + "/uploads/".length());
+            
+            String projectPath = System.getProperty("user.dir");
+            String filePath = projectPath + File.separator + uploadPath.replace("./", "") + File.separator + filename;
+            
+            File file = new File(filePath);
+            if (!file.exists()) {
+                return ResponseEntity.notFound().build();
+            }
+            
+            String contentType = Files.probeContentType(file.toPath());
+            if (contentType == null) {
+                contentType = "application/octet-stream";
+            }
+            
+            Resource resource = new FileSystemResource(file);
+            return ResponseEntity.ok()
+                    .contentType(MediaType.parseMediaType(contentType))
+                    .header(HttpHeaders.CONTENT_DISPOSITION, "inline; filename=\"" + filename + "\"")
+                    .body(resource);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.notFound().build();
         }
     }
 }

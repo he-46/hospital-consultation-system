@@ -203,12 +203,14 @@ export default {
           try {
             // 如果有头像文件，先上传
             if (avatarFile.value) {
+              console.log('准备上传头像...')
               const uploadRes = await uploadAvatar(avatarFile.value)
-              if (uploadRes.data.code === 200) {
-                form.avatar = uploadRes.data.data.url
-              }
+              console.log('头像上传结果:', uploadRes)
+              form.avatar = uploadRes.data.url
+              console.log('form.avatar 设置为:', form.avatar)
             }
             
+            console.log('注册数据:', form)
             await register(form)
             ElMessage.success('注册成功，请登录')
             router.push('/login')

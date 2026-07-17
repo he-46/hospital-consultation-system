@@ -57,14 +57,15 @@
 </template>
 
 <script>
-import { ref, computed, onMounted } from 'vue'
-import { useRouter } from 'vue-router'
+import { ref, computed, onMounted, watch } from 'vue'
+import { useRouter, useRoute } from 'vue-router'
 import axios from 'axios'
 
 export default {
   name: 'Header',
   setup() {
     const router = useRouter()
+    const route = useRoute()
     const searchKeyword = ref('')
     const userInfo = ref({})
     const isLoggedIn = computed(() => {
@@ -76,9 +77,9 @@ export default {
       if (!avatar) return ''
       if (avatar.startsWith('http')) return avatar
       if (avatar.startsWith('/uploads/')) {
-        return 'http://localhost:8080' + avatar
+        return '/api/file' + avatar  // 通过后端 API 访问
       }
-      return '/img/default-avatar.png'
+      return avatar
     })
     
     const loadUserInfo = () => {
@@ -86,13 +87,22 @@ export default {
       if (stored) {
         try {
           userInfo.value = JSON.parse(stored)
+          console.log('Header加载用户信息:', userInfo.value)
+          console.log('Header计算头像路径:', avatarSrc.value)
         } catch (e) {
           console.error('解析用户信息失败', e)
         }
+      } else {
+        userInfo.value = {}
       }
     }
     
     onMounted(() => {
+      loadUserInfo()
+    })
+    
+    // 监听路由变化，切换页面时重新加载用户信息
+    watch(() => route.path, () => {
       loadUserInfo()
     })
     

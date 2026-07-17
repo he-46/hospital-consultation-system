@@ -1,17 +1,16 @@
-import axios from 'axios'
+import request from './index'
 
 // 上传头像
 export function uploadAvatar(file) {
   const formData = new FormData()
   formData.append('file', file)
   
-  return axios({
+  return request({
     method: 'post',
-    url: '/api/file/uploadAvatar',
+    url: '/file/uploadAvatar',
     data: formData,
     headers: {
-      'Content-Type': 'multipart/form-data',
-      'Authorization': 'Bearer ' + (localStorage.getItem('token') || '')
+      'Content-Type': 'multipart/form-data'
     }
   })
 }

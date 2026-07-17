@@ -58,7 +58,9 @@ public class JwtInterceptor implements HandlerInterceptor {
             "/disease/detail",
             "/disease/search",
             // 文件上传
-            "/file/uploadAvatar"
+            "/file/uploadAvatar",
+            // 静态资源
+            "/uploads"
     );
 
     @Override
