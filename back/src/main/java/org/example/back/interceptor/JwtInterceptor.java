@@ -46,11 +46,10 @@ public class JwtInterceptor implements HandlerInterceptor {
             "/department/primary",
             "/department/secondary",
             "/department/tree",
-            "/doctor/list",
-            "/doctor/hot",
-            "/doctor/detail",
-            "/doctor/search",
-            "/doctor/schedule",
+            "/doctor",
+            "/doctors",
+            "/department",
+            "/hospital",
             "/article/list",
             "/article/hot",
             "/article/detail",
@@ -74,10 +73,10 @@ public class JwtInterceptor implements HandlerInterceptor {
 
         String uri = request.getRequestURI();
         String contextPath = request.getContextPath();
-        
+
         // 去掉contextPath得到实际路径
         String path = uri.substring(contextPath.length());
-        
+
         // 检查是否在排除列表中
         for (String excludePath : EXCLUDE_PATHS) {
             if (path.equals(excludePath) || path.startsWith(excludePath + "/")) {

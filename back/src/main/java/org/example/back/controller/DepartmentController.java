@@ -1,7 +1,9 @@
 package org.example.back.controller;
 
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import org.example.back.common.Result;
 import org.example.back.entity.Department;
+import org.example.back.entity.Doctor;
 import org.example.back.service.DepartmentService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
@@ -43,5 +45,17 @@ public class DepartmentController {
     public Result<?> getDepartmentTree() {
         List<Department> departments = departmentService.getDepartmentTree();
         return Result.success(departments);
+    }
+
+    /**
+     * 某科室下的医生列表 - GET /api/department/{id}/doctors
+     */
+    @GetMapping("/{id}/doctors")
+    public Result<?> getDoctorsByDepartment(
+            @PathVariable Long id,
+            @RequestParam(defaultValue = "1") Integer pageNum,
+            @RequestParam(defaultValue = "10") Integer pageSize) {
+        Page<Doctor> page = departmentService.getDoctorsByDepartment(id, pageNum, pageSize);
+        return Result.success(page);
     }
 }

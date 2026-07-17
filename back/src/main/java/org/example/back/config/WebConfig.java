@@ -52,6 +52,8 @@ public class WebConfig implements WebMvcConfigurer {
                         "/hospital/**",
                         "/department/**",
                         "/doctor/**",
+                        "/doctors/**",
+                        "/schedule/**",
                         "/article/**",
                         "/disease/**",
                         "/schedule/**",

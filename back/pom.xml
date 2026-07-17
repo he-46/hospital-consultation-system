@@ -64,6 +64,12 @@
             <scope>runtime</scope>
         </dependency>
 
+        <!-- Jackson JSR310 支持（Redis序列化LocalDateTime需要） -->
+        <dependency>
+            <groupId>com.fasterxml.jackson.datatype</groupId>
+            <artifactId>jackson-datatype-jsr310</artifactId>
+        </dependency>
+
         <!-- Lombok -->
         <dependency>
             <groupId>org.projectlombok</groupId>
