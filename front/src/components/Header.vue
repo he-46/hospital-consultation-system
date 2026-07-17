@@ -36,10 +36,10 @@
         <template v-else>
           <el-dropdown @command="handleCommand">
             <span class="user-info">
-              <el-avatar :size="32" :src="userInfo.avatar">
-                {{ userInfo.username?.charAt(0) }}
+              <el-avatar :size="32" :src="avatarSrc">
+                {{ userInfo.username ? userInfo.username.charAt(0) : 'U' }}
               </el-avatar>
-              <span class="username">{{ userInfo.username }}</span>
+              <span class="username">{{ userInfo.username || '用户' }}</span>
             </span>
             <template #dropdown>
               <el-dropdown-menu>
@@ -57,7 +57,7 @@
 </template>
 
 <script>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { logout } from '@/api/user'
 
@@ -71,11 +71,38 @@ export default {
       return !!localStorage.getItem('token')
     })
     
-    onMounted(() => {
+    // 计算头像src
+    const avatarSrc = computed(() => {
+      const avatar = userInfo.value.avatar
+      if (!avatar) return ''
+      // 如果是完整URL直接返回
+      if (avatar.startsWith('http')) return avatar
+      // 如果是 /uploads/ 开头，拼接后端地址
+      if (avatar.startsWith('/uploads/')) {
+        return 'http://localhost:8080' + avatar
+      }
+      // 其他情况
+      return avatar
+    })
+    
+    const loadUserInfo = () => {
       const stored = localStorage.getItem('userInfo')
       if (stored) {
-        userInfo.value = JSON.parse(stored)
+        try {
+          userInfo.value = JSON.parse(stored)
+        } catch (e) {
+          console.error('解析用户信息失败', e)
+        }
       }
+    }
+    
+    onMounted(() => {
+      loadUserInfo()
+    })
+    
+    // 监听路由变化，重新加载用户信息
+    watch(() => router.currentRoute.value.path, () => {
+      loadUserInfo()
     })
     
     const handleSearch = () => {
@@ -96,13 +123,12 @@ export default {
           router.push('/personal?tab=consults')
           break
         case 'logout':
-          try {
-            await logout()
-          } catch (e) {
-            console.log(e)
-          }
+          // 先清除本地数据
           localStorage.removeItem('token')
           localStorage.removeItem('userInfo')
+          userInfo.value = {}
+          // 尝试调用退出接口（不等待结果）
+          logout().catch(() => {})
           router.push('/home')
           break
       }
@@ -112,6 +138,7 @@ export default {
       searchKeyword,
       userInfo,
       isLoggedIn,
+      avatarSrc,
       handleSearch,
       handleCommand
     }
@@ -171,10 +198,8 @@ export default {
     flex: 1;
     max-width: 350px;
     
-    :deep(.el-input) {
-      .el-input__wrapper {
-        border-radius: 4px 0 0 4px;
-      }
+    :deep(.el-input__wrapper) {
+      border-radius: 4px 0 0 4px;
     }
     
     :deep(.el-button) {

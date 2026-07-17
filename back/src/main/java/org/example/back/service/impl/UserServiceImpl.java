@@ -84,7 +84,10 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
         // 设置默认值
         user.setStatus(1);
         user.setCreateTime(LocalDateTime.now());
-        user.setAvatar("img/default-avatar.png");
+        // 只有没有上传头像时才设置默认头像
+        if (user.getAvatar() == null || user.getAvatar().isEmpty()) {
+            user.setAvatar("img/default-avatar.png");
+        }
         
         return this.save(user);
     }

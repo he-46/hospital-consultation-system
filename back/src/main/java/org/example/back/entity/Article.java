@@ -1,6 +1,7 @@
 package org.example.back.entity;
 
 import com.baomidou.mybatisplus.annotation.IdType;
+import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
 import lombok.Data;
@@ -20,6 +21,7 @@ public class Article implements Serializable {
     
     private String content;
     
+    @TableField("department_id")
     private Long departmentId;
     
     private String author;
@@ -30,9 +32,12 @@ public class Article implements Serializable {
     
     private Integer status;
     
+    @TableField("publish_time")
     private LocalDateTime publishTime;
     
+    @TableField("create_time")
     private LocalDateTime createTime;
     
+    @TableField("update_time")
     private LocalDateTime updateTime;
 }

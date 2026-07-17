@@ -25,14 +25,39 @@ public class JwtInterceptor implements HandlerInterceptor {
     @Value("${jwt.secret}")
     private String secret;
 
-    // 不需要认证的路径
+    // 不需要认证的路径（公开接口）
     private static final List<String> EXCLUDE_PATHS = Arrays.asList(
+            // 用户相关
             "/user/login",
             "/user/register",
             "/user/verifyPhone",
             "/user/resetPassword",
+            // 配置相关
             "/config/list",
-            "/config/getByKey"
+            "/config/getByKey",
+            // 公开数据接口
+            "/hospital/list",
+            "/hospital/hot",
+            "/hospital/detail",
+            "/hospital/search",
+            "/department/primary",
+            "/department/secondary",
+            "/department/tree",
+            "/doctor/list",
+            "/doctor/hot",
+            "/doctor/detail",
+            "/doctor/search",
+            "/doctor/schedule",
+            "/article/list",
+            "/article/hot",
+            "/article/detail",
+            "/article/search",
+            "/disease/list",
+            "/disease/hot",
+            "/disease/detail",
+            "/disease/search",
+            // 文件上传
+            "/file/uploadAvatar"
     );
 
     @Override

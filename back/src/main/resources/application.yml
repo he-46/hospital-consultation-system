@@ -21,6 +21,11 @@ spring:
         max-wait: -1ms
         max-idle: 8
         min-idle: 0
+  
+  # 日期格式化
+  jackson:
+    date-format: yyyy-MM-dd
+    time-zone: Asia/Shanghai
 
 server:
   port: 8080
@@ -49,4 +54,4 @@ jwt:
 # 文件上传配置
 file:
   upload:
-    path: D:/hospital-upload/
+    path: ./uploads/

@@ -56,6 +56,15 @@ public class UserController {
         if (user.getPhone() == null || user.getPhone().isEmpty()) {
             return Result.error("请输入手机号");
         }
+        if (user.getRealName() == null || user.getRealName().isEmpty()) {
+            return Result.error("请输入真实姓名");
+        }
+        if (user.getGender() == null) {
+            return Result.error("请选择性别");
+        }
+        if (user.getBirthday() == null) {
+            return Result.error("请选择生日");
+        }
         
         try {
             boolean result = userService.register(user);
