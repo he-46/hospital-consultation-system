@@ -2,6 +2,7 @@ package org.example.back.controller;
 
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import org.example.back.common.Result;
+import org.example.back.entity.Doctor;
 import org.example.back.entity.Hospital;
 import org.example.back.service.HospitalService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -59,6 +60,18 @@ public class HospitalController {
             @RequestParam(defaultValue = "1") Integer pageNum,
             @RequestParam(defaultValue = "10") Integer pageSize) {
         Page<Hospital> page = hospitalService.searchHospitals(keyword, pageNum, pageSize);
+        return Result.success(page);
+    }
+
+    /**
+     * 某医院下的医生列表 - GET /api/hospital/{id}/doctors
+     */
+    @GetMapping("/{id}/doctors")
+    public Result<?> getDoctorsByHospital(
+            @PathVariable Long id,
+            @RequestParam(defaultValue = "1") Integer pageNum,
+            @RequestParam(defaultValue = "10") Integer pageSize) {
+        Page<Doctor> page = hospitalService.getDoctorsByHospital(id, pageNum, pageSize);
         return Result.success(page);
     }
 }

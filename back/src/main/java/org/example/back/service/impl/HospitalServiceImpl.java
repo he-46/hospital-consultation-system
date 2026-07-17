@@ -97,4 +97,29 @@ public class HospitalServiceImpl extends ServiceImpl<HospitalMapper, Hospital> i
         wrapper.orderByDesc(Hospital::getFollowCount);
         return this.page(page, wrapper);
     }
+
+    @Override
+    public Page<Doctor> getDoctorsByHospital(Long hospitalId, Integer pageNum, Integer pageSize) {
+        Page<Doctor> page = new Page<>(pageNum, pageSize);
+        LambdaQueryWrapper<Doctor> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(Doctor::getHospitalId, hospitalId)
+                .eq(Doctor::getStatus, 1)
+                .orderByDesc(Doctor::getRating);
+        Page<Doctor> result = doctorMapper.selectPage(page, wrapper);
+
+        // 填充医院和科室名称
+        if (result.getRecords() != null && !result.getRecords().isEmpty()) {
+            java.util.Set<Long> deptIds = result.getRecords().stream()
+                    .map(Doctor::getDepartmentId)
+                    .filter(java.util.Objects::nonNull)
+                    .collect(java.util.stream.Collectors.toSet());
+            java.util.Map<Long, String> deptMap = departmentMapper.selectBatchIds(deptIds).stream()
+                    .collect(java.util.stream.Collectors.toMap(Department::getId, Department::getName));
+            for (Doctor doctor : result.getRecords()) {
+                doctor.setDepartmentName(deptMap.get(doctor.getDepartmentId()));
+            }
+        }
+
+        return result;
+    }
 }

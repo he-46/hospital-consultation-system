@@ -42,6 +42,16 @@ public interface UserService {
     User verifyPhone(String phone);
     
     /**
+     * 发送验证码
+     */
+    String sendVerifyCode(String phone);
+    
+    /**
+     * 验证验证码
+     */
+    boolean verifyCode(String phone, String code);
+    
+    /**
      * 重置密码
      */
     boolean resetPassword(String phone, String password);
