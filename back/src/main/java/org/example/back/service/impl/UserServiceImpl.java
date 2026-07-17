@@ -4,6 +4,7 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import org.example.back.common.JwtUtil;
+import org.example.back.common.PasswordUtil;
 import org.example.back.common.RedisUtil;
 import org.example.back.entity.User;
 import org.example.back.mapper.UserMapper;
@@ -37,8 +38,8 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
             throw new RuntimeException("用户不存在");
         }
         
-        // 直接比较明文密码
-        if (!password.equals(user.getPassword())) {
+        // 使用MD5+盐码验证密码
+        if (!PasswordUtil.verifyStoredPassword(password, user.getPassword())) {
             throw new RuntimeException("密码错误");
         }
         
@@ -81,6 +82,12 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
             }
         }
         
+        // 使用MD5+盐码加密密码
+        String salt = PasswordUtil.generateSalt();
+        String encryptedPassword = PasswordUtil.encryptPassword(user.getPassword(), salt);
+        // 存储格式：加密密码:盐码
+        user.setPassword(encryptedPassword + ":" + salt);
+        
         // 设置默认值
         user.setStatus(1);
         user.setCreateTime(LocalDateTime.now());
@@ -108,14 +115,18 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
             throw new RuntimeException("用户不存在");
         }
         
-        // 明文比较原密码
-        if (!oldPassword.equals(user.getPassword())) {
+        // 使用MD5+盐码验证原密码
+        if (!PasswordUtil.verifyStoredPassword(oldPassword, user.getPassword())) {
             throw new RuntimeException("原密码错误");
         }
         
+        // 生成新的盐码并加密新密码
+        String salt = PasswordUtil.generateSalt();
+        String encryptedPassword = PasswordUtil.encryptPassword(newPassword, salt);
+        
         LambdaUpdateWrapper<User> wrapper = new LambdaUpdateWrapper<>();
         wrapper.eq(User::getId, userId)
-                .set(User::getPassword, newPassword)
+                .set(User::getPassword, encryptedPassword + ":" + salt)
                 .set(User::getUpdateTime, LocalDateTime.now());
         
         return this.update(wrapper);
