@@ -93,6 +93,18 @@ const routes = [
     name: 'Personal',
     component: () => import('@/views/Personal.vue'),
     meta: { requiresAuth: true }
+  },
+  {
+    path: '/feedback',
+    name: 'Feedback',
+    component: () => import('@/views/Feedback.vue'),
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/messages',
+    name: 'Messages',
+    component: () => import('@/views/Messages.vue'),
+    meta: { requiresAuth: true }
   }
 ]
 
