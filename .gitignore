@@ -8,6 +8,12 @@
 !*.example.yml
 !*.example.properties
 
+# Back-end config
+back/src/main/resources/*.yml
+back/src/main/resources/*.yaml
+back/src/main/resources/*.properties
+back/src/main/resources/*.xml
+
 # Temporary files
 *.tmp
 *.bak
