@@ -55,11 +55,27 @@
               <el-form-item label="真实姓名">
                 <el-input v-model="userForm.realName" />
               </el-form-item>
+              <el-form-item label="性别">
+                <el-radio-group v-model="userForm.gender">
+                  <el-radio :label="1">男</el-radio>
+                  <el-radio :label="2">女</el-radio>
+                </el-radio-group>
+              </el-form-item>
               <el-form-item label="手机号">
                 <el-input v-model="userForm.phone" />
               </el-form-item>
               <el-form-item label="邮箱">
                 <el-input v-model="userForm.email" />
+              </el-form-item>
+              <el-form-item label="出生日期">
+                <el-date-picker
+                  v-model="userForm.birthday"
+                  type="date"
+                  placeholder="选择出生日期"
+                  format="YYYY-MM-DD"
+                  value-format="YYYY-MM-DD"
+                  style="width: 100%"
+                />
               </el-form-item>
               <el-form-item>
                 <el-button type="primary" @click="saveProfile">保存</el-button>
