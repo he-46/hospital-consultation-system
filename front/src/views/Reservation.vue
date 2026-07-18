@@ -61,7 +61,7 @@
 import { ref, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
-import { getDoctorDetail } from '@/api/doctor'
+import { getDoctorDetail, getDoctorSchedule } from '@/api/doctor'
 import { createAppointment } from '@/api/appointment'
 import Header from '@/components/Header.vue'
 import Footer from '@/components/Footer.vue'
@@ -97,7 +97,15 @@ export default {
       try {
         const res = await getDoctorDetail(route.params.doctorId)
         doctor.value = res.data.doctor || {}
-        schedules.value = res.data.schedules || []
+      } catch (error) {
+        console.error(error)
+      }
+    }
+
+    const loadSchedules = async () => {
+      try {
+        const res = await getDoctorSchedule(route.params.doctorId)
+        schedules.value = res.data || []
         if (route.query.scheduleId) {
           form.value.scheduleId = Number(route.query.scheduleId)
           selectSchedule(form.value.scheduleId)
@@ -153,6 +161,7 @@ export default {
     
     onMounted(() => {
       loadData()
+      loadSchedules()
     })
     
     return {

@@ -1,4 +1,11 @@
 module.exports = {
+  css: {
+    loaderOptions: {
+      sass: {
+        api: 'modern'
+      }
+    }
+  },
   devServer: {
     port: 3000,
     proxy: {
