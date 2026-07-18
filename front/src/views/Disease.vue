@@ -2,20 +2,6 @@
   <div class="disease-page">
     <Header />
     <div class="main-content container">
-      <div class="filter-section card">
-        <h3 class="filter-title">选择科室</h3>
-        <div class="primary-departments">
-          <span 
-            v-for="dept in primaryDepts" 
-            :key="dept.id"
-            :class="{ active: selectedPrimaryId === dept.id }"
-            @click="selectPrimary(dept.id)"
-          >
-            {{ dept.name }}
-          </span>
-        </div>
-      </div>
-      
       <div class="disease-list">
         <router-link 
           v-for="disease in diseaseList" 
@@ -59,48 +45,30 @@
 <script>
 import { ref, onMounted } from 'vue'
 import { getDiseaseList } from '@/api/disease'
-import { getPrimaryDepartments } from '@/api/department'
 import Header from '@/components/Header.vue'
 import Footer from '@/components/Footer.vue'
+import { FirstAidKit } from '@element-plus/icons-vue'
 
 export default {
   name: 'Disease',
-  components: { Header, Footer },
+  components: { Header, Footer, FirstAidKit },
   setup() {
     const pageNum = ref(1)
     const pageSize = ref(12)
     const total = ref(0)
     const diseaseList = ref([])
-    const primaryDepts = ref([])
-    const selectedPrimaryId = ref(null)
     
     const loadDiseases = async () => {
       try {
         const res = await getDiseaseList({
           pageNum: pageNum.value,
-          pageSize: pageSize.value,
-          departmentId: selectedPrimaryId.value
+          pageSize: pageSize.value
         })
         diseaseList.value = res.data.records || []
         total.value = res.data.total || 0
       } catch (error) {
         console.error(error)
       }
-    }
-    
-    const loadDepartments = async () => {
-      try {
-        const res = await getPrimaryDepartments()
-        primaryDepts.value = res.data || []
-      } catch (error) {
-        console.error(error)
-      }
-    }
-    
-    const selectPrimary = (id) => {
-      selectedPrimaryId.value = id
-      pageNum.value = 1
-      loadDiseases()
     }
     
     const handlePageChange = (page) => {
@@ -110,7 +78,6 @@ export default {
     
     onMounted(() => {
       loadDiseases()
-      loadDepartments()
     })
     
     return {
@@ -118,9 +85,6 @@ export default {
       pageSize,
       total,
       diseaseList,
-      primaryDepts,
-      selectedPrimaryId,
-      selectPrimary,
       handlePageChange
     }
   }

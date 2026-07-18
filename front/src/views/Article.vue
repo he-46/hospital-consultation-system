@@ -2,20 +2,6 @@
   <div class="article-page">
     <Header />
     <div class="main-content container">
-      <div class="filter-section card">
-        <h3 class="filter-title">选择科室</h3>
-        <div class="primary-departments">
-          <span 
-            v-for="dept in primaryDepts" 
-            :key="dept.id"
-            :class="{ active: selectedPrimaryId === dept.id }"
-            @click="selectPrimary(dept.id)"
-          >
-            {{ dept.name }}
-          </span>
-        </div>
-      </div>
-      
       <div class="article-list">
         <router-link 
           v-for="article in articleList" 
@@ -58,7 +44,6 @@
 <script>
 import { ref, onMounted } from 'vue'
 import { getArticleList } from '@/api/article'
-import { getPrimaryDepartments } from '@/api/department'
 import Header from '@/components/Header.vue'
 import Footer from '@/components/Footer.vue'
 
@@ -70,36 +55,18 @@ export default {
     const pageSize = ref(10)
     const total = ref(0)
     const articleList = ref([])
-    const primaryDepts = ref([])
-    const selectedPrimaryId = ref(null)
     
     const loadArticles = async () => {
       try {
         const res = await getArticleList({
           pageNum: pageNum.value,
-          pageSize: pageSize.value,
-          departmentId: selectedPrimaryId.value
+          pageSize: pageSize.value
         })
         articleList.value = res.data.records || []
         total.value = res.data.total || 0
       } catch (error) {
         console.error(error)
       }
-    }
-    
-    const loadDepartments = async () => {
-      try {
-        const res = await getPrimaryDepartments()
-        primaryDepts.value = res.data || []
-      } catch (error) {
-        console.error(error)
-      }
-    }
-    
-    const selectPrimary = (id) => {
-      selectedPrimaryId.value = id
-      pageNum.value = 1
-      loadArticles()
     }
     
     const handlePageChange = (page) => {
@@ -114,7 +81,6 @@ export default {
     
     onMounted(() => {
       loadArticles()
-      loadDepartments()
     })
     
     return {
@@ -122,9 +88,6 @@ export default {
       pageSize,
       total,
       articleList,
-      primaryDepts,
-      selectedPrimaryId,
-      selectPrimary,
       handlePageChange,
       formatTime
     }

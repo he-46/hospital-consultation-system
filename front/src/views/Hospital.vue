@@ -2,30 +2,6 @@
   <div class="hospital-page">
     <Header />
     <div class="main-content container">
-      <div class="filter-section card">
-        <h3 class="filter-title">选择科室</h3>
-        <div class="primary-departments">
-          <span 
-            v-for="dept in primaryDepts" 
-            :key="dept.id"
-            :class="{ active: selectedPrimaryId === dept.id }"
-            @click="selectPrimary(dept.id)"
-          >
-            {{ dept.name }}
-          </span>
-        </div>
-        <div v-if="secondaryDepts.length > 0" class="secondary-departments">
-          <span 
-            v-for="dept in secondaryDepts" 
-            :key="dept.id"
-            :class="{ active: selectedSecondaryId === dept.id }"
-            @click="selectSecondary(dept.id)"
-          >
-            {{ dept.name }}
-          </span>
-        </div>
-      </div>
-      
       <div class="hospital-list">
         <router-link 
           v-for="hospital in hospitalList" 
@@ -70,7 +46,6 @@
 <script>
 import { ref, onMounted } from 'vue'
 import { getHospitalList } from '@/api/hospital'
-import { getPrimaryDepartments, getSecondaryDepartments } from '@/api/department'
 import Header from '@/components/Header.vue'
 import Footer from '@/components/Footer.vue'
 
@@ -82,52 +57,18 @@ export default {
     const pageSize = ref(12)
     const total = ref(0)
     const hospitalList = ref([])
-    const primaryDepts = ref([])
-    const secondaryDepts = ref([])
-    const selectedPrimaryId = ref(null)
-    const selectedSecondaryId = ref(null)
     
     const loadHospitals = async () => {
       try {
         const res = await getHospitalList({
           pageNum: pageNum.value,
-          pageSize: pageSize.value,
-          departmentId: selectedSecondaryId.value || selectedPrimaryId.value
+          pageSize: pageSize.value
         })
         hospitalList.value = res.data.records || []
         total.value = res.data.total || 0
       } catch (error) {
         console.error(error)
       }
-    }
-    
-    const loadDepartments = async () => {
-      try {
-        const res = await getPrimaryDepartments()
-        primaryDepts.value = res.data || []
-      } catch (error) {
-        console.error(error)
-      }
-    }
-    
-    const selectPrimary = async (id) => {
-      selectedPrimaryId.value = id
-      selectedSecondaryId.value = null
-      pageNum.value = 1
-      loadHospitals()
-      
-      try {
-        const res = await getSecondaryDepartments(id)
-        secondaryDepts.value = res.data || []
-      } catch (error) {
-        console.error(error)
-      }
-    }
-    
-    const selectSecondary = (id) => {
-      selectedSecondaryId.value = id
-      pageNum.value = 1
-      loadHospitals()
     }
     
     const handlePageChange = (page) => {
@@ -137,7 +78,6 @@ export default {
     
     onMounted(() => {
       loadHospitals()
-      loadDepartments()
     })
     
     return {
@@ -145,12 +85,6 @@ export default {
       pageSize,
       total,
       hospitalList,
-      primaryDepts,
-      secondaryDepts,
-      selectedPrimaryId,
-      selectedSecondaryId,
-      selectPrimary,
-      selectSecondary,
       handlePageChange
     }
   }
