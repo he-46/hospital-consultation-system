@@ -65,6 +65,7 @@ public class AppointmentServiceImpl extends ServiceImpl<AppointmentMapper, Appoi
         appointment.setUserId(userId);
         appointment.setDoctorId(request.getDoctorId());
         appointment.setHospitalId(request.getHospitalId());
+        appointment.setScheduleId(request.getScheduleId());
         appointment.setPatientName(request.getPatientName());
         appointment.setPatientPhone(request.getPatientPhone());
         appointment.setPatientIdCard(request.getPatientIdCard());
@@ -122,6 +123,7 @@ public class AppointmentServiceImpl extends ServiceImpl<AppointmentMapper, Appoi
             item.put("userId", a.getUserId());
             item.put("doctorId", a.getDoctorId());
             item.put("hospitalId", a.getHospitalId());
+            item.put("scheduleId", a.getScheduleId());
             item.put("patientName", a.getPatientName());
             item.put("patientPhone", a.getPatientPhone());
             item.put("patientIdCard", a.getPatientIdCard());
@@ -207,15 +209,11 @@ public class AppointmentServiceImpl extends ServiceImpl<AppointmentMapper, Appoi
         this.update(wrapper);
 
         if (currentStatus == 2) {
-            LambdaQueryWrapper<Schedule> scheduleWrapper = new LambdaQueryWrapper<>();
-            scheduleWrapper.eq(Schedule::getDoctorId, appointment.getDoctorId())
-                           .eq(Schedule::getHospitalId, appointment.getHospitalId())
-                           .eq(Schedule::getScheduleDate, appointment.getAppointmentDate())
-                           .eq(Schedule::getTimeSlot, appointment.getAppointmentTime());
-            Schedule schedule = scheduleMapper.selectOne(scheduleWrapper);
-            if (schedule != null) {
+            Long scheduleId = appointment.getScheduleId();
+            if (scheduleId != null) {
                 LambdaUpdateWrapper<Schedule> scheduleUpdate = new LambdaUpdateWrapper<>();
-                scheduleUpdate.eq(Schedule::getId, schedule.getId())
+                scheduleUpdate.eq(Schedule::getId, scheduleId)
+                              .gt(Schedule::getRemainCount, 0)
                               .setSql("remain_count = remain_count + 1");
                 scheduleMapper.update(null, scheduleUpdate);
             }

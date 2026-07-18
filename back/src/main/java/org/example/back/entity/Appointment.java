@@ -27,6 +27,8 @@ public class Appointment implements Serializable {
 
     private Long hospitalId;
 
+    private Long scheduleId;
+
     private String patientName;
 
     private String patientPhone;
