@@ -189,26 +189,7 @@
                 <el-rate v-model="item.rating" disabled />
               </div>
             </div>
-          </div>
           
-          <!-- 意见反馈 -->
-          <div v-else-if="activeTab === 'feedback'" class="feedback-form">
-            <el-form :model="feedbackForm" label-width="100px">
-              <el-form-item label="反馈类型">
-                <el-select v-model="feedbackForm.type">
-                  <el-option label="系统问题" :value="1" />
-                  <el-option label="服务问题" :value="2" />
-                  <el-option label="医生问题" :value="3" />
-                  <el-option label="其他问题" :value="4" />
-                </el-select>
-              </el-form-item>
-              <el-form-item label="反馈内容">
-                <el-input v-model="feedbackForm.content" type="textarea" rows="5" />
-              </el-form-item>
-              <el-form-item>
-                <el-button type="primary" @click="submitFeedback">提交</el-button>
-              </el-form-item>
-            </el-form>
           </div>
         </div>
       </div>
@@ -248,7 +229,6 @@ export default {
     const followHospitals = ref([])
     const followDiseases = ref([])
     const reviews = ref([])
-    const feedbackForm = ref({ type: 1, content: '' })
     
     const orderMenu = [
       { key: 'appointments', name: '我的挂号' },
@@ -260,8 +240,7 @@ export default {
       { key: 'followDoctors', name: '关注的医生' },
       { key: 'followHospitals', name: '关注的医院' },
       { key: 'followDiseases', name: '关注的疾病' },
-      { key: 'reviews', name: '我的评价' },
-      { key: 'feedback', name: '意见反馈' }
+      { key: 'reviews', name: '我的评价' }
     ]
     
     const menuMap = [...orderMenu, ...myMenu]
@@ -357,15 +336,6 @@ export default {
       }
     }
     
-    const submitFeedback = () => {
-      if (!feedbackForm.value.content) {
-        ElMessage.warning('请输入反馈内容')
-        return
-      }
-      ElMessage.success('反馈已提交')
-      feedbackForm.value = { type: 1, content: '' }
-    }
-    
     const getStatusText = (status) => {
       const map = { 1: '待支付', 2: '已支付', 3: '已完成', 4: '已取消' }
       return map[status] || '未知'
@@ -407,12 +377,10 @@ export default {
       followHospitals,
       followDiseases,
       reviews,
-      feedbackForm,
       orderMenu,
       myMenu,
       currentTitle,
       saveProfile,
-      submitFeedback,
       loadAppointments,
       handleCancelAppointment,
       getStatusText,
