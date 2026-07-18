@@ -141,7 +141,7 @@
 <script>
 import { reactive, ref, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
-import { ElMessage, ElMessageBox } from 'element-plus'
+import { ElMessage } from 'element-plus'
 import { CircleCheck } from '@element-plus/icons-vue'
 import { verifyPhone, sendCode, checkCode, resetPassword } from '@/api/user'
 
@@ -229,18 +229,9 @@ export default {
     // 发送验证码
     const handleSendCode = async () => {
       try {
-        const res = await sendCode(phoneForm.phone)
-        ElMessage.success('验证码已发送')
-        // 模拟短信发送，弹出提示框显示验证码
-        ElMessageBox.alert(
-          `您的验证码是：<strong style="font-size: 20px; color: #409eff;">${res.data.code}</strong><br/><span style="color: #909399; font-size: 12px;">（5分钟内有效）</span>`,
-          '验证码提示',
-          {
-            confirmButtonText: '我知道了',
-            dangerouslyUseHTMLString: true
-          }
-        )
-        // 开始倒计时
+        await sendCode(phoneForm.phone)
+        ElMessage.success('验证码已发送，请注意查收')
+        // 开始60秒倒计时
         countdown.value = 60
         countdownTimer = setInterval(() => {
           countdown.value--
@@ -250,6 +241,7 @@ export default {
         }, 1000)
       } catch (error) {
         console.error(error)
+        ElMessage.error(error.message || '验证码发送失败')
       }
     }
     
