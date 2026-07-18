@@ -4,6 +4,7 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import org.example.back.common.Result;
 import org.example.back.entity.Department;
 import org.example.back.entity.Doctor;
+import org.example.back.entity.Hospital;
 import org.example.back.service.DepartmentService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
@@ -39,10 +40,19 @@ public class DepartmentController {
     }
 
     /**
-     * 获取科室树形结构
+     * 2-1 科室树查询 - GET /api/departments/tree（已缓存到Redis）
      */
     @GetMapping("/tree")
     public Result<?> getDepartmentTree() {
+        List<Department> departments = departmentService.getDepartmentTree();
+        return Result.success(departments);
+    }
+
+    /**
+     * 2-1 (别名) 科室树查询 - GET /api/departments/tree
+     */
+    @GetMapping("/departments/tree")
+    public Result<?> getDepartmentTreePlural() {
         List<Department> departments = departmentService.getDepartmentTree();
         return Result.success(departments);
     }
@@ -56,6 +66,18 @@ public class DepartmentController {
             @RequestParam(defaultValue = "1") Integer pageNum,
             @RequestParam(defaultValue = "10") Integer pageSize) {
         Page<Doctor> page = departmentService.getDoctorsByDepartment(id, pageNum, pageSize);
+        return Result.success(page);
+    }
+
+    /**
+     * 2-2 某科室下的医院列表 - GET /api/departments/{id}/hospitals
+     */
+    @GetMapping("/departments/{id}/hospitals")
+    public Result<?> getHospitalsByDepartment(
+            @PathVariable Long id,
+            @RequestParam(defaultValue = "1") Integer pageNum,
+            @RequestParam(defaultValue = "10") Integer pageSize) {
+        Page<Hospital> page = departmentService.getHospitalsByDepartment(id, pageNum, pageSize);
         return Result.success(page);
     }
 }

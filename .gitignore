@@ -8,7 +8,8 @@
 !*.example.yml
 !*.example.properties
 
-# Back-end config
+# Back-end config (含数据库密码等敏感信息)
+back/src/main/resources/application.yml
 back/src/main/resources/*.yml
 back/src/main/resources/*.yaml
 back/src/main/resources/*.properties

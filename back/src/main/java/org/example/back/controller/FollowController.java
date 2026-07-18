@@ -46,4 +46,13 @@ public class FollowController {
         Boolean flag = followService.checkFollow(followType, followId);
         return Result.success(flag);
     }
+
+    @GetMapping("/record-id")
+    public Result<Long> getFollowRecordId(
+            @RequestParam Integer followType,
+            @RequestParam Long followId
+    ){
+        Long id = followService.getFollowRecordId(followType, followId);
+        return Result.success(id);
+    }
 }
