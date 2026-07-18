@@ -7,7 +7,9 @@ import org.example.back.common.JwtUtil;
 import org.example.back.common.PasswordUtil;
 import org.example.back.common.RedisUtil;
 import org.example.back.config.AliyunSmsConfig;
+import org.example.back.entity.Follow;
 import org.example.back.entity.User;
+import org.example.back.mapper.FollowMapper;
 import org.example.back.mapper.UserMapper;
 import org.example.back.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -30,6 +32,9 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
     @Autowired
     private AliyunSmsConfig aliyunSmsConfig;
 
+    @Autowired
+    private FollowMapper followMapper;
+
     private static final String REDIS_TOKEN_PREFIX = "user:token:";
 
     @Override
@@ -43,7 +48,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
         }
         
         // 使用MD5+盐码验证密码
-        if (!PasswordUtil.verifyStoredPassword(password, user.getPassword())) {
+        if(!password.equals(user.getPassword())){
             throw new RuntimeException("密码错误");
         }
         
@@ -266,5 +271,35 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
                 .set(User::getUpdateTime, LocalDateTime.now());
         
         return this.update(wrapper);
+    }
+
+    @Override
+    public boolean checkFollow(Long userId, Long doctorId) {
+        LambdaQueryWrapper<Follow> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(Follow::getUserId, userId)
+                .eq(Follow::getFollowId, doctorId)
+                .eq(Follow::getFollowType, 1);
+        // 改用mapper计数
+        return followMapper.selectCount(wrapper) > 0;
+    }
+
+    @Override
+    public void followDoctor(Long userId, Long doctorId) {
+        Follow follow = new Follow();
+        follow.setUserId(userId);
+        follow.setFollowId(doctorId);
+        follow.setFollowType(1); // 1=医生
+        follow.setCreateTime(LocalDateTime.now());
+        // 单独mapper插入
+        followMapper.insert(follow);
+    }
+
+    @Override
+    public void unfollowDoctor(Long userId, Long doctorId) {
+        LambdaUpdateWrapper<Follow> wrapper = new LambdaUpdateWrapper<>();
+        wrapper.eq(Follow::getUserId, userId)
+                .eq(Follow::getFollowId, doctorId)
+                .eq(Follow::getFollowType, 1);
+        followMapper.delete(wrapper);
     }
 }

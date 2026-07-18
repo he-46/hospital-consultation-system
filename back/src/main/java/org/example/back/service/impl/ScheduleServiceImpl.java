@@ -22,15 +22,14 @@ public class ScheduleServiceImpl extends ServiceImpl<ScheduleMapper, Schedule> i
     public List<Schedule> getDoctorSchedules(Long doctorId, int days) {
         LocalDate today = LocalDate.now();
         LocalDate endDate = today.plusDays(days);
-
         LambdaQueryWrapper<Schedule> wrapper = new LambdaQueryWrapper<>();
         wrapper.eq(Schedule::getDoctorId, doctorId)
-                .ge(Schedule::getScheduleDate, today)
-                .le(Schedule::getScheduleDate, endDate)
+                // 注释掉时间范围过滤，不再限制日期
+                // .ge(Schedule::getScheduleDate, today)
+                // .le(Schedule::getScheduleDate, endDate)
                 .eq(Schedule::getStatus, 1)
                 .orderByAsc(Schedule::getScheduleDate)
                 .orderByAsc(Schedule::getTimeSlot);
-
         return this.list(wrapper);
     }
 }

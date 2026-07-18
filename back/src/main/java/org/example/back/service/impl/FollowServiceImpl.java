@@ -1,5 +1,6 @@
 package org.example.back.service.impl;
 
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
@@ -7,10 +8,7 @@ import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import org.example.back.common.BusinessException;
 import org.example.back.common.UserContext;
 import org.example.back.dto.follow.FollowAddDTO;
-import org.example.back.entity.Follow;
-import org.example.back.entity.Disease;
-import org.example.back.entity.Doctor;
-import org.example.back.entity.Hospital;
+import org.example.back.entity.*;
 import org.example.back.mapper.FollowMapper;
 import org.example.back.mapper.DiseaseMapper;
 import org.example.back.mapper.DoctorMapper;
@@ -32,11 +30,13 @@ public class FollowServiceImpl extends ServiceImpl<FollowMapper, Follow> impleme
 
     @Override
     @Transactional(rollbackFor = Exception.class)
-    public void addFollow(FollowAddDTO dto) {
-        Long userId = UserContext.getUserId();
+    public void addFollow(FollowAddDTO dto, Long userId) {
+        System.out.println("service接收userId：" + userId);
+        System.out.println("followType：" + dto.getFollowType());
+        System.out.println("followId原始值：" + dto.getFollowId());
         Integer type = dto.getFollowType();
-        Long targetId = dto.getFollowId();
-
+        Long targetId = Long.valueOf(dto.getFollowId().toString());
+        // 下面你的重复判断、插入、更新关注数代码完全不变
         // 判断是否已关注
         Long count = baseMapper.selectCount(Wrappers.<Follow>lambdaQuery()
                 .eq(Follow::getUserId, userId)
@@ -120,13 +120,15 @@ public class FollowServiceImpl extends ServiceImpl<FollowMapper, Follow> impleme
     }
 
     @Override
-    public IPage<Follow> getMyFollowPage(Long page, Long size, Integer followType) {
-        Long userId = UserContext.getUserId();
-        Page<Follow> pageObj = new Page<>(page, size);
-        return baseMapper.selectPage(pageObj, Wrappers.<Follow>lambdaQuery()
-                .eq(Follow::getUserId, userId)
-                .eq(followType != null, Follow::getFollowType, followType)
-                .orderByDesc(Follow::getCreateTime));
+    public IPage<FollowVO> getMyFollowPage(Long page, Long size, Integer followType, Long userId) {
+        Page<FollowVO> pageParam = new Page<>(page, size);
+        LambdaQueryWrapper<Follow> wrapper = Wrappers.lambdaQuery();
+        // 关键：过滤当前登录用户
+        wrapper.eq(Follow::getUserId, userId);
+        if(followType != null){
+            wrapper.eq(Follow::getFollowType, followType);
+        }
+        return baseMapper.selectFollowWithDoctor(pageParam, userId, followType);
     }
 
     @Override

@@ -7,9 +7,7 @@ spring:
     driver-class-name: com.mysql.cj.jdbc.Driver
     url: jdbc:mysql://localhost:3306/hospital_db?useUnicode=true&characterEncoding=utf-8&serverTimezone=Asia/Shanghai&useSSL=false
     username: root
-
-
-    password: wys050205
+    password: 123456
 
   
   # Redis配置
@@ -39,7 +37,7 @@ server:
 
 # MyBatis-Plus配置
 mybatis-plus:
-  mapper-locations: classpath:mapper/*.xml
+  mapper-locations: classpath:mapper/**/*.xml
   type-aliases-package: org.example.back.entity
   configuration:
     map-underscore-to-camel-case: true
@@ -64,7 +62,7 @@ file:
 # 阿里云短信配置
 aliyun:
   sms:
-    access-key-id: YOUR_ACCESS_KEY_ID
-    access-key-secret: YOUR_ACCESS_KEY_SECRET
+    access-key-id: 
+    access-key-secret:
     sign-name: 速通互联验证码
     template-code: "100001"

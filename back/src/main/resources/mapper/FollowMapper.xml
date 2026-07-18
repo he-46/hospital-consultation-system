@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="org.example.back.mapper.FollowMapper">
+
+    <!-- 联查关注 + 三种类型（医院/医生/疾病），医生时额外联查科室 -->
+    <select id="selectFollowWithDoctor" resultType="org.example.back.entity.FollowVO">
+        SELECT
+            f.id,
+            f.user_id AS userId,
+            f.follow_type AS followType,
+            f.follow_id AS followId,
+            f.create_time AS createTime,
+            h.name AS hospitalName,
+            h.level AS hospitalLevel,
+            h.image AS hospitalImage,
+            h.intro AS hospitalIntro,
+            d.name AS doctorName,
+            d.title AS doctorTitle,
+            dep.name AS doctorDepartment,
+            d.avatar AS doctorAvatar,
+            d.intro AS doctorIntro,
+            dis.name AS diseaseName,
+            dis.alias AS diseaseAlias,
+            dis.description AS diseaseDesc
+        FROM t_follow f
+        LEFT JOIN t_hospital h ON f.follow_type = 1 AND f.follow_id = h.id
+        LEFT JOIN t_doctor d ON f.follow_type = 2 AND f.follow_id = d.id
+        LEFT JOIN t_department dep ON d.department_id = dep.id
+        LEFT JOIN t_disease dis ON f.follow_type = 3 AND f.follow_id = dis.id
+        WHERE f.user_id = #{userId}
+        <if test="followType != null">
+            AND f.follow_type = #{followType}
+        </if>
+        ORDER BY f.create_time DESC
+    </select>
+
+</mapper>

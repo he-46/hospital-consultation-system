@@ -38,6 +38,9 @@
             </div>
           </div>
           <div class="action-btns">
+            <el-button :type="isFollow ? 'danger' : 'default'" @click="handleFollowClick">
+              {{ isFollow ? '取消关注' : '关注' }}
+            </el-button>
             <el-button type="primary" @click="$router.push(`/reservation/${doctor.id}`)">
               预约挂号
             </el-button>
@@ -123,6 +126,8 @@
 import { ref, computed, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 import { getDoctorDetail, getDoctorSchedule, getDoctorReviews } from '@/api/doctor'
+import { getFollows, addFollow, delFollow, checkFollow } from '@/api/follow'
+import { ElMessage } from 'element-plus'
 import Header from '@/components/Header.vue'
 import Footer from '@/components/Footer.vue'
 
@@ -137,6 +142,59 @@ export default {
     const reviewTotal = ref(0)
     const reviewPageNum = ref(1)
     const reviewPageSize = ref(5)
+    const isFollow = ref(false)
+    const myFollowId = ref(null)  // 当前用户对当前医生的关注记录ID
+
+    // 加载关注状态
+    const loadFollowStatus = async () => {
+      try {
+        const res = await checkFollow({ followType: 2, followId: route.params.id })
+        isFollow.value = res.data === true
+      } catch (err) {
+        console.error(err)
+      }
+    }
+
+    // 加载当前用户对该医生的关注记录ID
+    const loadMyFollowId = async () => {
+      try {
+        const res = await getFollows({ page: 1, size: 100, followType: 2 })
+        const records = res.data.records || []
+        const match = records.find(r => String(r.followId) === String(route.params.id))
+        myFollowId.value = match ? match.id : null
+      } catch (err) {
+        console.error(err)
+      }
+    }
+
+    const handleFollowClick = async () => {
+      if (isFollow.value) {
+        await unfollowDoctor()
+      } else {
+        await followDoctor()
+      }
+    }
+
+    // eslint-disable-next-line no-unused-vars
+    const followDoctor = async () => {
+      await addFollow({ followType: 2, followId: route.params.id })
+      ElMessage.success('关注成功')
+      isFollow.value = true
+      loadMyFollowId()
+    }
+
+    // 取消关注
+    // eslint-disable-next-line no-unused-vars
+    const unfollowDoctor = async () => {
+      if (!myFollowId.value) {
+        ElMessage.error('未找到关注记录')
+        return
+      }
+      await delFollow(myFollowId.value)
+      ElMessage.success('取消关注成功')
+      isFollow.value = false
+      myFollowId.value = null
+    }
 
     const expertiseList = computed(() => {
       if (!doctor.value.expertise) return []
@@ -191,12 +249,15 @@ export default {
       loadData()
       loadSchedules()
       loadReviews()
+      loadFollowStatus()
+      loadMyFollowId()
     })
 
     return {
-      doctor, schedules, reviews,
-      reviewTotal, reviewPageNum, reviewPageSize,
-      expertiseList, formatTime, handleReviewPageChange
+      doctor,schedules,reviews,
+      reviewTotal,reviewPageNum,reviewPageSize,
+      expertiseList,formatTime,handleReviewPageChange,
+      isFollow,handleFollowClick,followDoctor,unfollowDoctor
     }
   }
 }
@@ -263,8 +324,8 @@ export default {
     display: flex;
     flex-direction: column;
     gap: 10px;
-
-    .el-button { width: 120px; }
+    align-items: center;
+    :deep(.el-button) { width: 120px; justify-content: center; }
   }
 }
 

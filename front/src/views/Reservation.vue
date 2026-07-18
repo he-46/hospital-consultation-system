@@ -106,12 +106,14 @@ export default {
       try {
         const res = await getDoctorSchedule(route.params.doctorId)
         schedules.value = res.data || []
+        // 数据赋值完成后再执行自动选中
         if (route.query.scheduleId) {
-          form.value.scheduleId = Number(route.query.scheduleId)
-          selectSchedule(form.value.scheduleId)
+          const sid = Number(route.query.scheduleId)
+          form.value.scheduleId = sid
+          selectSchedule(sid)
         }
       } catch (error) {
-        console.error(error)
+        console.error('加载排班失败', error)
       }
     }
     

@@ -6,8 +6,8 @@
         <div class="sidebar card">
           <div class="menu-group">
             <div class="menu-title">订单管理</div>
-            <div 
-              v-for="item in orderMenu" 
+            <div
+              v-for="item in orderMenu"
               :key="item.key"
               :class="{ active: activeTab === item.key }"
               class="menu-item"
@@ -18,12 +18,12 @@
           </div>
           <div class="menu-group">
             <div class="menu-title">我的</div>
-            <div 
-              v-for="item in myMenu" 
+            <div
+              v-for="item in myMenu"
               :key="item.key"
               :class="{ active: activeTab === item.key }"
               class="menu-item"
-              @click="activeTab = item.key"
+              @click="item.link ? goToPage(item.link) : (activeTab = item.key)"
             >
               {{ item.name }}
             </div>
@@ -126,6 +126,16 @@
           
           <!-- 我的咨询 -->
           <div v-else-if="activeTab === 'consults'" class="order-list">
+            <div class="status-filter">
+              <el-radio-group v-model="consultFilter" size="small" @change="loadConsults">
+                <el-radio-button :label="null">全部</el-radio-button>
+                <el-radio-button :label="1">待支付</el-radio-button>
+                <el-radio-button :label="2">已支付</el-radio-button>
+                <el-radio-button :label="3">咨询中</el-radio-button>
+                <el-radio-button :label="4">已完成</el-radio-button>
+                <el-radio-button :label="5">已取消</el-radio-button>
+              </el-radio-group>
+            </div>
             <div v-if="consults.length === 0" class="empty">暂无咨询记录</div>
             <div v-else v-for="item in consults" :key="item.id" class="order-item">
               <div class="order-header">
@@ -133,22 +143,42 @@
                 <span class="status" :class="getConsultStatusClass(item.status)">{{ getConsultStatusText(item.status) }}</span>
               </div>
               <div class="order-content">
-                <p>医生: {{ item.doctorName }}</p>
+                <p>医生: {{ item.doctorName }} <span class="tag">{{ item.doctorTitle }}</span></p>
+                <p>医院: {{ item.hospitalName || '-' }}</p>
                 <p>预约时间: {{ item.appointmentTime }}</p>
                 <p>咨询人: {{ item.patientName }}</p>
+                <p>咨询费: ¥{{ item.amount }}</p>
+              </div>
+              <div class="order-footer" v-if="item.status === 1 || item.status === 2 || item.status === 4">
+                <el-button v-if="item.status === 1" type="primary" size="small" @click="$router.push('/consult-pay/' + item.id)">去支付</el-button>
+                <el-button v-if="item.status === 1 || item.status === 2" type="danger" size="small" @click="handleCancelConsult(item)">取消</el-button>
+                <el-button v-if="item.status === 4" type="success" size="small" @click="handleReview(item)">评价</el-button>
               </div>
             </div>
+            <el-pagination
+              v-if="consultTotal > consultSize"
+              class="pagination"
+              v-model:current-page="consultPage"
+              :page-size="consultSize"
+              :total="consultTotal"
+              layout="prev, pager, next"
+              @current-change="loadConsults"
+            />
           </div>
           
           <!-- 关注的医生 -->
           <div v-else-if="activeTab === 'followDoctors'" class="follow-list">
             <div v-if="followDoctors.length === 0" class="empty">暂无关注的医生</div>
-            <div v-else class="grid-list">
-              <div v-for="item in followDoctors" :key="item.id" class="follow-item">
-                <img :src="item.avatar || '/img/doctor_default.jpg'" />
-                <div class="info">
-                  <h3>{{ item.name }}</h3>
-                  <p>{{ item.hospitalName }} - {{ item.departmentName }}</p>
+            <div v-else class="text-list">
+              <div v-for="item in followDoctors" :key="item.id" class="doc-item">
+                <div class="text-wrap">
+                  <h3>医生姓名：{{ item.doctorName }}</h3>
+                  <p>科室：{{ item.doctorDepartment }} | 职称：{{ item.doctorTitle }}</p>
+                  <p>个人简介：{{ item.doctorIntro }}</p>
+                  <p>关注时间：{{ item.createTime }}</p>
+                </div>
+                <div class="btn-wrap">
+                  <el-button type="danger" size="small" @click="unFollowDoctor(item.id)">取消关注</el-button>
                 </div>
               </div>
             </div>
@@ -159,10 +189,11 @@
             <div v-if="followHospitals.length === 0" class="empty">暂无关注的医院</div>
             <div v-else class="grid-list">
               <div v-for="item in followHospitals" :key="item.id" class="follow-item">
-                <img :src="item.image || '/img/hospital_default.jpg'" />
+                <img :src="item.hospitalImage || '/img/hospital_default.jpg'" />
                 <div class="info">
-                  <h3>{{ item.name }}</h3>
-                  <p>{{ item.level }}</p>
+                  <h3>{{ item.hospitalName }}</h3>
+                  <p>{{ item.hospitalLevel }}</p>
+                  <el-button type="danger" size="small" @click="unFollowItem(item.id)">取消关注</el-button>
                 </div>
               </div>
             </div>
@@ -173,8 +204,11 @@
             <div v-if="followDiseases.length === 0" class="empty">暂无关注的疾病</div>
             <div v-else class="disease-list">
               <div v-for="item in followDiseases" :key="item.id" class="disease-item">
-                <h3>{{ item.name }}</h3>
-                <p>{{ item.description }}</p>
+                <div class="disease-info">
+                  <h3>{{ item.diseaseName }}</h3>
+                  <p>{{ item.diseaseDesc }}</p>
+                </div>
+                <el-button type="danger" size="small" @click="unFollowItem(item.id)">取消关注</el-button>
               </div>
             </div>
           </div>
@@ -219,21 +253,37 @@
 
 <script>
 import { ref, computed, onMounted, watch } from 'vue'
-import { useRoute } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Plus } from '@element-plus/icons-vue'
 import { getUserInfo, updateUserInfo } from '@/api/user'
 import { uploadAvatar } from '@/api/file'
 import { getAppointmentList, cancelAppointment } from '@/api/appointment'
+import { getConsultList, cancelConsult } from '@/api/consult'
+import { getReviewList } from '@/api/review'
 import Header from '@/components/Header.vue'
 import Footer from '@/components/Footer.vue'
+import { getFollows, delFollow } from '@/api/follow'
 
 export default {
   name: 'Personal',
   components: { Header, Footer, Plus },
   setup() {
     const route = useRoute()
+    const router = useRouter()
     const activeTab = ref(route.query.tab || 'profile')
+
+    const handleMenuClick = (item) => {
+      if (item.link) {
+        router.push(item.link)
+      } else {
+        activeTab.value = item.key
+      }
+    }
+
+    const goToPage = (path) => {
+      router.push(path)
+    }
     
     const userForm = ref({})
     const avatarUrl = ref('')
@@ -244,6 +294,10 @@ export default {
     const apptSize = ref(5)
     const apptTotal = ref(0)
     const consults = ref([])
+    const consultFilter = ref(null)
+    const consultPage = ref(1)
+    const consultSize = ref(5)
+    const consultTotal = ref(0)
     const followDoctors = ref([])
     const followHospitals = ref([])
     const followDiseases = ref([])
@@ -252,15 +306,15 @@ export default {
     
     const orderMenu = [
       { key: 'appointments', name: '我的挂号' },
-      { key: 'consults', name: '我的咨询' }
+      { key: 'consults', name: '我的咨询' },
     ]
-    
+
     const myMenu = [
       { key: 'profile', name: '个人资料' },
-      { key: 'followDoctors', name: '关注的医生' },
-      { key: 'followHospitals', name: '关注的医院' },
-      { key: 'followDiseases', name: '关注的疾病' },
-      { key: 'reviews', name: '我的评价' },
+      { key: 'followDoctors', name: '关注的医生', link: '/follow/doctor' },
+      { key: 'followHospitals', name: '关注的医院', link: '/follow/hospital' },
+      { key: 'followDiseases', name: '关注的疾病', link: '/follow/disease' },
+      { key: 'reviews', name: '我的评价', link: '/my/review' },
       { key: 'feedback', name: '意见反馈' }
     ]
     
@@ -278,12 +332,117 @@ export default {
 
     const loadAppointments = async () => {
       try {
+        console.log('=== 开始加载挂号列表, status:', apptFilter.value)
         const res = await getAppointmentList({ status: apptFilter.value, page: apptPage.value, size: apptSize.value })
-        const data = res.data
-        appointments.value = data.records || []
-        apptTotal.value = data.total || 0
+        console.log('=== 挂号列表原始响应:', JSON.stringify(res))
+        if (res && res.data) {
+          appointments.value = res.data.records || []
+          apptTotal.value = res.data.total || 0
+          console.log('=== 赋值成功, records:', appointments.value.length, 'total:', apptTotal.value)
+        } else {
+          console.warn('=== 挂号列表res或res.data为空:', res)
+          appointments.value = []
+          apptTotal.value = 0
+        }
       } catch (error) {
-        console.error(error)
+        console.error('=== 加载挂号列表异常:', error)
+        appointments.value = []
+        apptTotal.value = 0
+      }
+    }
+
+    // 加载关注的医生 followType=2
+    const loadFollowDoctors = async () => {
+      try {
+        const res = await getFollows({ page:1, size:10, followType:2 })
+        followDoctors.value = res.data.records
+      } catch(err) {
+        console.error('加载医生关注失败', err)
+      }
+    }
+
+    // 取消关注医生
+    const unFollowDoctor = async (followId) => {
+      try {
+        await delFollow(followId)
+        ElMessage.success('取消关注成功')
+        loadFollowDoctors()
+      } catch (err) {
+        ElMessage.error(err.message || '取消失败')
+      }
+    }
+
+    // 通用取消关注（医院、疾病等）
+    const unFollowItem = async (followId) => {
+      try {
+        await ElMessageBox.confirm('确定取消关注吗？', '提示', { type: 'warning' })
+        await delFollow(followId)
+        ElMessage.success('已取消关注')
+        // 根据当前 tab 刷新对应列表
+        if (activeTab.value === 'followHospitals') loadFollowHospitals()
+        else if (activeTab.value === 'followDiseases') loadFollowDiseases()
+      } catch (err) {
+        if (err !== 'cancel') ElMessage.error('操作失败')
+      }
+    }
+
+    // 加载我的咨询
+    const loadConsults = async () => {
+      try {
+        const params = { page: consultPage.value, size: consultSize.value }
+        if (consultFilter.value != null) params.status = consultFilter.value
+        const res = await getConsultList(params)
+        consults.value = res.data.records || []
+        consultTotal.value = res.data.total || 0
+      } catch(err) {
+        console.error('加载咨询列表失败', err)
+      }
+    }
+
+    // 取消咨询
+    const handleCancelConsult = async (item) => {
+      try {
+        await ElMessageBox.confirm('确定要取消此咨询吗？', '提示', { confirmButtonText: '确定', cancelButtonText: '取消', type: 'warning' })
+        await cancelConsult(item.id)
+        ElMessage.success('取消成功')
+        loadConsults()
+      } catch (error) {
+        if (error !== 'cancel') console.error(error)
+      }
+    }
+
+    // 评价（跳转到评价页）
+    const handleReview = (item) => {
+      router.push({ path: '/my/review', query: { orderType: 2, orderId: item.id, doctorId: item.doctorId } })
+    }
+
+    // 加载我的评价
+    const loadReviews = async () => {
+      try {
+        const res = await getReviewList({ page: 1, size: 50 })
+        reviews.value = res.data.records || []
+      } catch(err) {
+        console.error('加载评价列表失败', err)
+      }
+    }
+
+    // 加载关注的医院 followType=1
+    const loadFollowHospitals = async () => {
+      try {
+        const res = await getFollows({ page:1, size:10, followType:1 })
+        followHospitals.value = res.data.records
+      } catch(err) {
+        console.error('加载医院关注失败', err)
+      }
+    }
+
+    // 加载关注的疾病 followType=3
+    const loadFollowDiseases = async () => {
+      try {
+        const res = await getFollows({ page:1, size:10, followType:3 })
+        followDiseases.value = res.data.records
+      } catch(err) {
+        console.error('加载疾病关注失败', err)
       }
     }
 
@@ -302,11 +461,24 @@ export default {
       if (val === 'appointments') {
         apptPage.value = 1
         loadAppointments()
+      } else if (val === 'consults') {
+        loadConsults()
+      } else if (val === 'followDoctors') {
+        loadFollowDoctors()
+      } else if (val === 'followHospitals') {
+        loadFollowHospitals()
+      } else if (val === 'followDiseases') {
+        loadFollowDiseases()
+      } else if (val === 'reviews') {
+        loadReviews()
       }
     })
 
     watch(apptFilter, () => {
       apptPage.value = 1
+    })
+    watch(consultFilter, () => {
+      consultPage.value = 1
     })
     
     const getAvatarUrl = (avatar) => {
@@ -385,11 +557,23 @@ export default {
       const map = { 1: 'pending', 2: 'paid', 3: 'consulting', 4: 'completed', 5: 'cancelled' }
       return map[status] || ''
     }
-    
+
+
+
     onMounted(() => {
       loadUserInfo()
       if (activeTab.value === 'appointments') {
         loadAppointments()
+      } else if (activeTab.value === 'consults') {
+        loadConsults()
+      } else if (activeTab.value === 'followDoctors') {
+        loadFollowDoctors()
+      } else if (activeTab.value === 'followHospitals') {
+        loadFollowHospitals()
+      } else if (activeTab.value === 'followDiseases') {
+        loadFollowDiseases()
+      } else if (activeTab.value === 'reviews') {
+        loadReviews()
       }
     })
     
@@ -403,6 +587,10 @@ export default {
       apptSize,
       apptTotal,
       consults,
+      consultFilter,
+      consultPage,
+      consultSize,
+      consultTotal,
       followDoctors,
       followHospitals,
       followDiseases,
@@ -411,16 +599,27 @@ export default {
       orderMenu,
       myMenu,
       currentTitle,
+      handleMenuClick,
+      goToPage,
       saveProfile,
       submitFeedback,
       loadAppointments,
+      loadConsults,
+      loadFollowDoctors,
+      loadFollowHospitals,
+      loadFollowDiseases,
+      loadReviews,
       handleCancelAppointment,
+      handleCancelConsult,
+      handleReview,
       getStatusText,
       getStatusClass,
       getConsultStatusText,
       getConsultStatusClass,
       getAvatarUrl,
-      handleAvatarChange
+      handleAvatarChange,
+      unFollowDoctor,
+      unFollowItem
     }
   }
 }
@@ -532,28 +731,30 @@ export default {
   }
 }
 
-.grid-list {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 15px;
-  
-  .follow-item {
-    padding: 15px;
-    background: #fafbfc;
-    border-radius: 8px;
-    text-align: center;
-    
-    img {
-      width: 80px;
-      height: 80px;
-      border-radius: 50%;
-      object-fit: cover;
-      margin-bottom: 10px;
-    }
-    
-    h3 { font-size: 14px; color: #333; margin-bottom: 5px; }
-    p { font-size: 12px; color: #999; }
-  }
+.text-list {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.doc-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  border: 1px solid #eee;
+  padding: 14px;
+  border-radius: 8px;
+}
+.text-wrap h3 {
+  margin: 0 0 8px;
+  font-size: 17px;
+}
+.text-wrap p {
+  margin: 4px 0;
+  color: #555;
+  font-size: 14px;
+}
+.btn-wrap {
+  margin-top: 6px;
 }
 
 .disease-list {

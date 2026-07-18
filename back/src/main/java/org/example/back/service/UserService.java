@@ -60,4 +60,9 @@ public interface UserService {
      * 重置密码
      */
     boolean resetPassword(String phone, String password);
+
+    // 新增关注相关
+    boolean checkFollow(Long userId, Long doctorId);
+    void followDoctor(Long userId, Long doctorId);
+    void unfollowDoctor(Long userId, Long doctorId);
 }
