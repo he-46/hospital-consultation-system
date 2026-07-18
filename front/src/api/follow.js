@@ -3,7 +3,7 @@ import request from '@/utils/request'
 // 新增关注
 export function addFollow(data) {
     return request({
-        url: '/api/follows',
+        url: '/follows',
         method: 'post',
         data
     })
@@ -11,14 +11,14 @@ export function addFollow(data) {
 // 取消关注
 export function delFollow(id) {
     return request({
-        url: `/api/follows/${id}`,
+        url: `/follows/${id}`,
         method: 'delete'
     })
 }
 // 我的关注分页
 export function getFollowList(params) {
     return request({
-        url: '/api/follows',
+        url: '/follows',
         method: 'get',
         params
     })

@@ -11,7 +11,7 @@ import org.springframework.web.bind.annotation.*;
 import javax.annotation.Resource;
 
 @RestController
-@RequestMapping("/api/reviews")
+@RequestMapping("/reviews")
 public class ReviewController {
     @Resource
     private ReviewService reviewService;

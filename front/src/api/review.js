@@ -3,7 +3,7 @@ import request from '@/utils/request'
 // 提交评价
 export function submitReview(data) {
     return request({
-        url: '/api/reviews',
+        url: '/reviews',
         method: 'post',
         data
     })
@@ -11,7 +11,7 @@ export function submitReview(data) {
 // 我的评价
 export function getReviewList(params) {
     return request({
-        url: '/api/reviews',
+        url: '/reviews',
         method: 'get',
         params
     })
