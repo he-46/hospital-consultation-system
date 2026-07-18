@@ -39,7 +39,18 @@
           <el-form-item label="身份证号" prop="patientIdCard">
             <el-input v-model="form.patientIdCard" placeholder="请输入身份证号" />
           </el-form-item>
-          
+
+          <el-form-item label="性别" prop="patientGender">
+            <el-radio-group v-model="form.patientGender">
+              <el-radio :label="1">男</el-radio>
+              <el-radio :label="2">女</el-radio>
+            </el-radio-group>
+          </el-form-item>
+
+          <el-form-item label="年龄" prop="patientAge">
+            <el-input-number v-model="form.patientAge" :min="0" :max="150" placeholder="请输入年龄" style="width: 100%" />
+          </el-form-item>
+
           <el-form-item label="病情描述">
             <el-input v-model="form.diseaseDesc" type="textarea" rows="3" placeholder="请描述您的病情" />
           </el-form-item>
@@ -58,7 +69,7 @@
 </template>
 
 <script>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { getDoctorDetail, getDoctorSchedule } from '@/api/doctor'
@@ -83,14 +94,17 @@ export default {
       patientName: '',
       patientPhone: '',
       patientIdCard: '',
+      patientGender: 1,
+      patientAge: null,
       diseaseDesc: ''
     })
-    
+
     const rules = {
       scheduleId: [{ required: true, message: '请选择预约日期', trigger: 'change' }],
       patientName: [{ required: true, message: '请输入就诊人姓名', trigger: 'blur' }],
       patientPhone: [{ required: true, message: '请输入联系电话', trigger: 'blur' }],
-      patientIdCard: [{ required: true, message: '请输入身份证号', trigger: 'blur' }]
+      patientIdCard: [{ required: true, message: '请输入身份证号', trigger: 'blur' }],
+      patientGender: [{ required: true, message: '请选择性别', trigger: 'change' }]
     }
     
     const loadData = async () => {
@@ -125,6 +139,25 @@ export default {
       }
     }
 
+    watch(() => form.value.patientIdCard, (idCard) => {
+      if (idCard && idCard.length === 18) {
+        const birthStr = idCard.substring(6, 14)
+        const birthYear = parseInt(birthStr.substring(0, 4))
+        const birthMonth = parseInt(birthStr.substring(4, 6))
+        const birthDay = parseInt(birthStr.substring(6, 8))
+        const birthDate = new Date(birthYear, birthMonth - 1, birthDay)
+        const today = new Date()
+        let age = today.getFullYear() - birthDate.getFullYear()
+        const m = today.getMonth() - birthDate.getMonth()
+        if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
+          age--
+        }
+        if (age >= 0 && age <= 150) {
+          form.value.patientAge = age
+        }
+      }
+    })
+
     const submitReservation = async () => {
       if (!formRef.value) return
 
@@ -145,8 +178,8 @@ export default {
               patientName: form.value.patientName,
               patientPhone: form.value.patientPhone,
               patientIdCard: form.value.patientIdCard,
-              patientGender: 1,
-              patientAge: null,
+              patientGender: form.value.patientGender,
+              patientAge: form.value.patientAge,
               appointmentDate: form.value.appointmentDate,
               appointmentTime: form.value.appointmentTime,
               diseaseDesc: form.value.diseaseDesc

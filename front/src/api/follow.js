@@ -1,4 +1,4 @@
-import request from '@/utils/request'
+import request from './index'
 
 // 新增关注
 export function addFollow(data) {
@@ -29,5 +29,19 @@ export function checkFollow(params) {
         url: '/follows/check',
         method: 'get',
         params
+    })
+}
+
+// 获取关注状态（别名）
+export function getFollowStatus(followType, followId) {
+    return checkFollow({ followType, followId })
+}
+
+// 获取关注记录ID（用于取消关注）
+export function getFollowRecordId(followType, followId) {
+    return request({
+        url: '/follows/record-id',
+        method: 'get',
+        params: { followType, followId }
     })
 }

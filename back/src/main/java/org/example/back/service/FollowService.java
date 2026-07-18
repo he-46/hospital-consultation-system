@@ -14,4 +14,7 @@ public interface FollowService {
     IPage<FollowVO> getMyFollowPage(Long page, Long size, Integer type, Long userId);
     // 判断是否已关注
     Boolean checkFollow(Integer type, Long targetId);
+
+    // 获取关注记录ID（用于取消关注）
+    Long getFollowRecordId(Integer followType, Long followId);
 }

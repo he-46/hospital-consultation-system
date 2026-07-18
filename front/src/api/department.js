@@ -24,3 +24,20 @@ export function getDepartmentTree() {
     method: 'get'
   })
 }
+
+// 2-1 获取科室树（新接口别名）
+export function getDepartmentTreeNew() {
+  return request({
+    url: '/department/departments/tree',
+    method: 'get'
+  })
+}
+
+// 2-2 获取某科室下的医院列表
+export function getHospitalsByDepartment(departmentId, params) {
+  return request({
+    url: `/department/departments/${departmentId}/hospitals`,
+    method: 'get',
+    params
+  })
+}

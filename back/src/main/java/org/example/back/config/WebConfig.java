@@ -57,6 +57,7 @@ public class WebConfig implements WebMvcConfigurer {
                         "/article/**",
                         "/disease/**",
                         "/schedule/**",
+                        "/search/**",
                         "/payment/callback",
                         "/file/**",
                         "/uploads/**"

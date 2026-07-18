@@ -128,18 +128,13 @@ public class PaymentFlowServiceImpl extends ServiceImpl<PaymentFlowMapper, Payme
             throw new RuntimeException("挂号订单不存在");
         }
 
-        LambdaQueryWrapper<Schedule> scheduleWrapper = new LambdaQueryWrapper<>();
-        scheduleWrapper.eq(Schedule::getDoctorId, appointment.getDoctorId())
-                       .eq(Schedule::getHospitalId, appointment.getHospitalId())
-                       .eq(Schedule::getScheduleDate, appointment.getAppointmentDate())
-                       .eq(Schedule::getTimeSlot, appointment.getAppointmentTime());
-        Schedule schedule = scheduleMapper.selectOne(scheduleWrapper);
-        if (schedule == null) {
-            throw new RuntimeException("排班不存在");
+        Long scheduleId = appointment.getScheduleId();
+        if (scheduleId == null) {
+            throw new RuntimeException("排班信息缺失");
         }
 
         LambdaUpdateWrapper<Schedule> scheduleUpdate = new LambdaUpdateWrapper<>();
-        scheduleUpdate.eq(Schedule::getId, schedule.getId())
+        scheduleUpdate.eq(Schedule::getId, scheduleId)
                       .gt(Schedule::getRemainCount, 0)
                       .setSql("remain_count = remain_count - 1");
         int rows = scheduleMapper.update(null, scheduleUpdate);

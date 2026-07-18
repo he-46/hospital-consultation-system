@@ -1,4 +1,4 @@
-import request from '@/utils/request'
+import request from './index'
 
 // 提交评价
 export function submitReview(data) {

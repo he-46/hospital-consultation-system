@@ -140,4 +140,15 @@ public class FollowServiceImpl extends ServiceImpl<FollowMapper, Follow> impleme
                 .eq(Follow::getFollowId, followId));
         return count > 0;
     }
+
+    @Override
+    public Long getFollowRecordId(Integer followType, Long followId) {
+        Long userId = UserContext.getUserId();
+        Follow follow = baseMapper.selectOne(Wrappers.<Follow>lambdaQuery()
+                .eq(Follow::getUserId, userId)
+                .eq(Follow::getFollowType, followType)
+                .eq(Follow::getFollowId, followId)
+                .last("LIMIT 1"));
+        return follow != null ? follow.getId() : 0L;
+    }
 }
