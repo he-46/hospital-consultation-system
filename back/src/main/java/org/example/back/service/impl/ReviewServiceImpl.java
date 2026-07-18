@@ -9,9 +9,11 @@ import org.example.back.common.UserContext;
 import org.example.back.common.enums.ConsultStatusEnum;
 import org.example.back.common.enums.OrderTypeEnum;
 import org.example.back.dto.review.ReviewSubmitDTO;
+import org.example.back.entity.Appointment;
 import org.example.back.entity.Consult;
 import org.example.back.entity.Doctor;
 import org.example.back.entity.Review;
+import org.example.back.mapper.AppointmentMapper;
 import org.example.back.mapper.ConsultMapper;
 import org.example.back.mapper.DoctorMapper;
 import org.example.back.mapper.ReviewMapper;
@@ -30,6 +32,8 @@ public class ReviewServiceImpl extends ServiceImpl<ReviewMapper, Review> impleme
     private ConsultMapper consultMapper;
     @Resource
     private DoctorMapper doctorMapper;
+    @Resource
+    private AppointmentMapper appointmentMapper;
 
     @Override
     @Transactional(rollbackFor = Exception.class)
@@ -48,6 +52,16 @@ public class ReviewServiceImpl extends ServiceImpl<ReviewMapper, Review> impleme
             if(!consult.getStatus().equals(ConsultStatusEnum.FINISHED.getCode())){
                 throw new BusinessException(40000,"仅已完成订单可评价");
             }
+        } else if(orderType == OrderTypeEnum.REGISTER.getCode()){
+            Appointment appointment = appointmentMapper.selectById(orderId);
+            if(appointment == null || !appointment.getUserId().equals(userId)){
+                throw new BusinessException(40000,"订单不存在或无权评价");
+            }
+            if(appointment.getStatus() != 3){
+                throw new BusinessException(40000,"仅已完成订单可评价");
+            }
+        } else {
+            throw new BusinessException(40000,"无效的订单类型");
         }
 
         // 2. 校验该订单是否已评价
