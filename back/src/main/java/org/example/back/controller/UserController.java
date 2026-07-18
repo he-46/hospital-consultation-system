@@ -1,5 +1,6 @@
 package org.example.back.controller;
 
+import org.example.back.common.RedisUtil;
 import org.example.back.common.Result;
 import org.example.back.entity.User;
 import org.example.back.service.UserService;
@@ -18,6 +19,9 @@ public class UserController {
 
     @Autowired
     private UserService userService;
+    
+    @Autowired
+    private RedisUtil redisUtil;
 
     /**
      * 用户登录
@@ -46,29 +50,63 @@ public class UserController {
      * 用户注册
      */
     @PostMapping("/register")
-    public Result<?> register(@RequestBody User user) {
-        if (user.getUsername() == null || user.getUsername().isEmpty()) {
+    public Result<?> register(@RequestBody Map<String, String> params) {
+        String username = params.get("username");
+        String password = params.get("password");
+        String phone = params.get("phone");
+        String verifyCode = params.get("verifyCode");
+        String realName = params.get("realName");
+        Integer gender = params.get("gender") != null ? Integer.parseInt(params.get("gender")) : null;
+        String birthday = params.get("birthday");
+        String email = params.get("email");
+        String avatar = params.get("avatar");
+        
+        if (username == null || username.isEmpty()) {
             return Result.error("请输入用户名");
         }
-        if (user.getPassword() == null || user.getPassword().isEmpty()) {
+        if (password == null || password.isEmpty()) {
             return Result.error("请输入密码");
         }
-        if (user.getPhone() == null || user.getPhone().isEmpty()) {
+        if (phone == null || phone.isEmpty()) {
             return Result.error("请输入手机号");
         }
-        if (user.getRealName() == null || user.getRealName().isEmpty()) {
+        if (verifyCode == null || verifyCode.isEmpty()) {
+            return Result.error("请输入验证码");
+        }
+        if (realName == null || realName.isEmpty()) {
             return Result.error("请输入真实姓名");
         }
-        if (user.getGender() == null) {
+        if (gender == null) {
             return Result.error("请选择性别");
         }
-        if (user.getBirthday() == null) {
+        if (birthday == null || birthday.isEmpty()) {
             return Result.error("请选择生日");
         }
         
+        // 验证验证码
+        String storedCode = (String) redisUtil.get("register:code:" + phone);
+        if (storedCode == null) {
+            return Result.error("验证码已过期，请重新获取");
+        }
+        if (!storedCode.equals(verifyCode)) {
+            return Result.error("验证码错误");
+        }
+        
         try {
+            User user = new User();
+            user.setUsername(username);
+            user.setPassword(password);
+            user.setPhone(phone);
+            user.setRealName(realName);
+            user.setGender(gender);
+            user.setBirthday(java.time.LocalDate.parse(birthday));
+            user.setEmail(email);
+            user.setAvatar(avatar);
+            
             boolean result = userService.register(user);
             if (result) {
+                // 删除已使用的验证码
+                redisUtil.delete("register:code:" + phone);
                 return Result.success("注册成功");
             } else {
                 return Result.error("注册失败");
@@ -146,6 +184,25 @@ public class UserController {
             userService.logout(userId);
         }
         return Result.success("退出成功");
+    }
+    
+    /**
+     * 发送注册验证码
+     */
+    @PostMapping("/sendRegisterCode")
+    public Result<?> sendRegisterCode(@RequestBody Map<String, String> params) {
+        String phone = params.get("phone");
+        
+        if (phone == null || phone.isEmpty()) {
+            return Result.error("请输入手机号");
+        }
+        
+        try {
+            userService.sendRegisterCode(phone);
+            return Result.success("验证码已发送");
+        } catch (Exception e) {
+            return Result.error(e.getMessage());
+        }
     }
 
     /**

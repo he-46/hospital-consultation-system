@@ -60,6 +60,25 @@
           />
         </el-form-item>
         
+        <el-form-item prop="verifyCode">
+          <div class="code-input">
+            <el-input 
+              v-model="form.verifyCode" 
+              placeholder="请输入验证码"
+              prefix-icon="Key"
+              size="large"
+              maxlength="6"
+            />
+            <el-button 
+              size="large" 
+              :disabled="countdown > 0"
+              @click="handleSendCode"
+            >
+              {{ countdown > 0 ? `${countdown}秒` : '获取验证码' }}
+            </el-button>
+          </div>
+        </el-form-item>
+        
         <el-form-item prop="realName">
           <el-input 
             v-model="form.realName" 
@@ -118,11 +137,11 @@
 </template>
 
 <script>
-import { reactive, ref } from 'vue'
+import { reactive, ref, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { Plus } from '@element-plus/icons-vue'
-import { register } from '@/api/user'
+import { register, sendRegisterCode } from '@/api/user'
 import { uploadAvatar } from '@/api/file'
 
 export default {
@@ -132,6 +151,8 @@ export default {
     const router = useRouter()
     const formRef = ref(null)
     const loading = ref(false)
+    const countdown = ref(0)
+    let countdownTimer = null
     const avatarUrl = ref('')
     const avatarFile = ref(null)
     
@@ -140,6 +161,7 @@ export default {
       password: '',
       confirmPassword: '',
       phone: '',
+      verifyCode: '',
       realName: '',
       gender: 1,
       birthday: '',
@@ -172,6 +194,10 @@ export default {
         { required: true, message: '请输入手机号', trigger: 'blur' },
         { pattern: /^1[3-9]\d{9}$/, message: '请输入正确的手机号', trigger: 'blur' }
       ],
+      verifyCode: [
+        { required: true, message: '请输入验证码', trigger: 'blur' },
+        { len: 6, message: '验证码为6位数字', trigger: 'blur' }
+      ],
       realName: [
         { required: true, message: '请输入真实姓名', trigger: 'blur' }
       ]
@@ -194,6 +220,31 @@ export default {
       avatarFile.value = file.raw
     }
     
+    const handleSendCode = async () => {
+      if (!form.phone) {
+        ElMessage.warning('请先输入手机号')
+        return
+      }
+      if (!/^1[3-9]\d{9}$/.test(form.phone)) {
+        ElMessage.warning('请输入正确的手机号')
+        return
+      }
+      
+      try {
+        await sendRegisterCode(form.phone)
+        ElMessage.success('验证码已发送')
+        countdown.value = 60
+        countdownTimer = setInterval(() => {
+          countdown.value--
+          if (countdown.value <= 0) {
+            clearInterval(countdownTimer)
+          }
+        }, 1000)
+      } catch (error) {
+        console.error(error)
+      }
+    }
+    
     const handleRegister = async () => {
       if (!formRef.value) return
       
@@ -203,14 +254,10 @@ export default {
           try {
             // 如果有头像文件，先上传
             if (avatarFile.value) {
-              console.log('准备上传头像...')
               const uploadRes = await uploadAvatar(avatarFile.value)
-              console.log('头像上传结果:', uploadRes)
               form.avatar = uploadRes.data.url
-              console.log('form.avatar 设置为:', form.avatar)
             }
             
-            console.log('注册数据:', form)
             await register(form)
             ElMessage.success('注册成功，请登录')
             router.push('/login')
@@ -223,13 +270,21 @@ export default {
       })
     }
     
+    onUnmounted(() => {
+      if (countdownTimer) {
+        clearInterval(countdownTimer)
+      }
+    })
+    
     return {
       form,
       rules,
       loading,
+      countdown,
       formRef,
       avatarUrl,
       handleAvatarChange,
+      handleSendCode,
       handleRegister
     }
   }
@@ -259,10 +314,9 @@ export default {
   margin-bottom: 25px;
   
   h1 {
-    color: #1e88e5;
     font-size: 24px;
-    font-weight: bold;
-    margin-bottom: 10px;
+    color: #333;
+    margin-bottom: 8px;
   }
   
   p {
@@ -272,41 +326,39 @@ export default {
 }
 
 .avatar-upload {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
+  text-align: center;
   margin-bottom: 25px;
   
   .avatar-uploader {
-    width: 100px;
-    height: 100px;
-    border: 1px dashed #d9d9d9;
-    border-radius: 50%;
-    cursor: pointer;
-    overflow: hidden;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: border-color 0.3s;
-    
-    &:hover {
-      border-color: #1e88e5;
-    }
+    display: inline-block;
     
     :deep(.el-upload) {
-      width: 100%;
-      height: 100%;
+      border: 1px dashed #d9d9d9;
+      border-radius: 50%;
+      cursor: pointer;
+      overflow: hidden;
+      transition: border-color 0.3s;
+      
+      &:hover {
+        border-color: #1e88e5;
+      }
     }
     
     .avatar {
-      width: 100%;
-      height: 100%;
+      width: 80px;
+      height: 80px;
+      border-radius: 50%;
       object-fit: cover;
     }
     
     .avatar-uploader-icon {
+      width: 80px;
+      height: 80px;
       font-size: 28px;
-      color: #8c9398;
+      color: #8c939d;
+      display: flex;
+      align-items: center;
+      justify-content: center;
     }
   }
   
@@ -317,25 +369,30 @@ export default {
   }
 }
 
-.register-form {
-  .register-btn {
-    width: 100%;
-    height: 48px;
-    font-size: 16px;
+.code-input {
+  display: flex;
+  gap: 10px;
+  
+  .el-input {
+    flex: 1;
   }
+  
+  .el-button {
+    width: 120px;
+  }
+}
+
+.register-btn {
+  width: 100%;
 }
 
 .register-footer {
   text-align: center;
-  margin-top: 25px;
-  padding-top: 25px;
-  border-top: 1px solid #e8eef3;
-  font-size: 14px;
-  color: #666;
+  margin-top: 20px;
   
   a {
-    color: #1e88e5;
-    font-weight: 500;
+    color: #409eff;
+    text-decoration: none;
     
     &:hover {
       text-decoration: underline;

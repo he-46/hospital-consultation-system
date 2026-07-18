@@ -52,6 +52,11 @@ public interface UserService {
     boolean verifyCode(String phone, String code);
     
     /**
+     * 发送注册验证码（用于注册时验证手机号）
+     */
+    String sendRegisterCode(String phone);
+    
+    /**
      * 重置密码
      */
     boolean resetPassword(String phone, String password);

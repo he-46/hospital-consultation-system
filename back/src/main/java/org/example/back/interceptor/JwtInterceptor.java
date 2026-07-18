@@ -30,6 +30,7 @@ public class JwtInterceptor implements HandlerInterceptor {
             // 用户相关
             "/user/login",
             "/user/register",
+            "/user/sendRegisterCode",
             "/user/verifyPhone",
             "/user/sendCode",
             "/user/checkCode",

@@ -6,6 +6,7 @@ import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import org.example.back.common.JwtUtil;
 import org.example.back.common.PasswordUtil;
 import org.example.back.common.RedisUtil;
+import org.example.back.config.AliyunSmsConfig;
 import org.example.back.entity.User;
 import org.example.back.mapper.UserMapper;
 import org.example.back.service.UserService;
@@ -25,6 +26,9 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
 
     @Autowired
     private RedisUtil redisUtil;
+
+    @Autowired
+    private AliyunSmsConfig aliyunSmsConfig;
 
     private static final String REDIS_TOKEN_PREFIX = "user:token:";
 
@@ -182,9 +186,12 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
         // 存储到Redis，5分钟有效
         redisUtil.set(REDIS_CODE_PREFIX + phone, code, 5, TimeUnit.MINUTES);
         
-        // TODO: 实际项目中这里应该调用短信服务发送验证码
-        // 目前模拟发送，打印到控制台
-        System.out.println("【短信验证码】手机号：" + phone + "，验证码：" + code);
+        // 发送短信验证码（阿里云）
+        try {
+            aliyunSmsConfig.getAliyunSmsUtil().sendVerifyCode(phone, aliyunSmsConfig.getSignName(), aliyunSmsConfig.getTemplateCode(), code);
+        } catch (Exception e) {
+            throw new RuntimeException("验证码发送失败: " + e.getMessage());
+        }
         
         return code;
     }
@@ -201,6 +208,34 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
         // 验证成功后删除验证码
         redisUtil.delete(REDIS_CODE_PREFIX + phone);
         return true;
+    }
+    
+    private static final String REDIS_REG_CODE_PREFIX = "register:code:";
+
+    @Override
+    public String sendRegisterCode(String phone) {
+        // 检查手机号是否已被注册
+        LambdaQueryWrapper<User> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(User::getPhone, phone);
+        User user = this.getOne(wrapper);
+        if (user != null) {
+            throw new RuntimeException("该手机号已被注册");
+        }
+        
+        // 生成6位随机验证码
+        String code = String.format("%06d", new java.util.Random().nextInt(1000000));
+        
+        // 存储到Redis，5分钟有效
+        redisUtil.set(REDIS_REG_CODE_PREFIX + phone, code, 5, TimeUnit.MINUTES);
+        
+        // 发送短信验证码（阿里云）
+        try {
+            aliyunSmsConfig.getAliyunSmsUtil().sendVerifyCode(phone, aliyunSmsConfig.getSignName(), aliyunSmsConfig.getTemplateCode(), code);
+        } catch (Exception e) {
+            throw new RuntimeException("验证码发送失败: " + e.getMessage());
+        }
+        
+        return code;
     }
 
     @Override

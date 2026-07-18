@@ -18,6 +18,15 @@ export function register(data) {
   })
 }
 
+// 发送注册验证码
+export function sendRegisterCode(phone) {
+  return request({
+    url: '/user/sendRegisterCode',
+    method: 'post',
+    data: { phone }
+  })
+}
+
 // 获取用户信息
 export function getUserInfo() {
   return request({
