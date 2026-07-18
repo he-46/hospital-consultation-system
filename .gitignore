@@ -38,3 +38,6 @@ Thumbs.db
 
 # Redis
 dump.rdb
+
+# Uploads
+uploads/

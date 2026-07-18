@@ -3,6 +3,7 @@ package org.example.back.interceptor;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
+import org.example.back.common.UserContext;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.springframework.web.servlet.HandlerInterceptor;
@@ -111,6 +112,7 @@ public class JwtInterceptor implements HandlerInterceptor {
             String username = claims.getSubject();
             request.setAttribute("userId", userId);
             request.setAttribute("username", username);
+            UserContext.setUserId(userId);
             
             return true;
         } catch (Exception e) {

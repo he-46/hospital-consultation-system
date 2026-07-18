@@ -18,6 +18,9 @@
               {{ doctor.name }}
               <span v-if="doctor.onlineStatus === 1" class="online-badge">在线</span>
               <span v-else class="offline-badge">离线</span>
+              <button :class="['follow-btn', isFollowed ? 'followed' : 'follow']" @click="toggleFollow">
+                {{ isFollowed ? '已关注(' + followCount + ')' : '关注' }}
+              </button>
             </h1>
             <div class="title-tag">{{ doctor.title }}</div>
             <p class="hospital-dept">
@@ -123,8 +126,10 @@
 import { ref, computed, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 import { getDoctorDetail, getDoctorSchedule, getDoctorReviews } from '@/api/doctor'
+import { addFollow, delFollow, checkFollow, getFollowRecordId } from '@/api/follow'
 import Header from '@/components/Header.vue'
 import Footer from '@/components/Footer.vue'
+import { ElMessage } from 'element-plus'
 
 export default {
   name: 'DoctorDetail',
@@ -138,6 +143,10 @@ export default {
     const reviewPageNum = ref(1)
     const reviewPageSize = ref(5)
 
+    const isFollowed = ref(false)
+    const followCount = ref(0)
+    let followRecordId = null
+
     const expertiseList = computed(() => {
       if (!doctor.value.expertise) return []
       return doctor.value.expertise.split(/[,，]/).filter(Boolean)
@@ -148,6 +157,7 @@ export default {
       try {
         const res = await getDoctorDetail(doctorId)
         doctor.value = res.data.doctor || {}
+        followCount.value = doctor.value.followCount || 0
       } catch (error) {
         console.error(error)
       }
@@ -187,16 +197,54 @@ export default {
       loadReviews()
     }
 
-    onMounted(() => {
-      loadData()
+    const checkFollowStatus = async () => {
+      const token = localStorage.getItem('token')
+      if (!token) return
+      try {
+        const res = await checkFollow({ followType: 2, followId: doctor.value.id })
+        isFollowed.value = res.data === true || (res.data && res.data.flag === true)
+      } catch (e) { /* 未登录或接口异常时保持未关注状态 */ }
+    }
+
+    const toggleFollow = async () => {
+      const token = localStorage.getItem('token')
+      if (!token) {
+        ElMessage.warning('请先登录')
+        return
+      }
+      try {
+        if (isFollowed.value) {
+          const res = await getFollowRecordId(2, doctor.value.id)
+          followRecordId = res.data
+          if (followRecordId) {
+            await delFollow(followRecordId)
+            isFollowed.value = false
+            followCount.value = Math.max(0, followCount.value - 1)
+            ElMessage.success('已取消关注')
+          }
+        } else {
+          await addFollow({ followType: 2, followId: doctor.value.id })
+          isFollowed.value = true
+          followCount.value++
+          ElMessage.success('关注成功')
+        }
+      } catch (e) {
+        ElMessage.error('操作失败')
+      }
+    }
+
+    onMounted(async () => {
+      await loadData()
       loadSchedules()
       loadReviews()
+      checkFollowStatus()
     })
 
     return {
       doctor, schedules, reviews,
       reviewTotal, reviewPageNum, reviewPageSize,
-      expertiseList, formatTime, handleReviewPageChange
+      expertiseList, formatTime, handleReviewPageChange,
+      isFollowed, followCount, toggleFollow
     }
   }
 }
@@ -226,6 +274,28 @@ export default {
     h1 { font-size: 24px; color: #333; margin-bottom: 10px; display: flex; align-items: center; gap: 10px; }
     .online-badge { display: inline-block; background: #4caf50; color: white; padding: 3px 10px; border-radius: 10px; font-size: 12px; }
     .offline-badge { display: inline-block; background: #999; color: white; padding: 3px 10px; border-radius: 10px; font-size: 12px; }
+
+    .follow-btn {
+      padding: 8px 20px;
+      border-radius: 20px;
+      font-size: 14px;
+      cursor: pointer;
+      transition: all 0.3s;
+      border: none;
+      outline: none;
+      margin-left: auto;
+
+      &.follow {
+        background-color: #1e88e5;
+        color: white;
+        &:hover { background-color: #1565c0; }
+      }
+      &.followed {
+        background-color: #f5f7fa;
+        color: #999;
+        border: 1px solid #e8eef3;
+      }
+    }
 
     .title-tag {
       display: inline-block;

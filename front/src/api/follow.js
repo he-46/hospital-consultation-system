@@ -26,7 +26,7 @@ export function getFollowList(params) {
 // 判断是否关注
 export function checkFollow(params) {
     return request({
-        url: '/api/follows/check',
+        url: '/follows/check',
         method: 'get',
         params
     })
@@ -40,7 +40,7 @@ export function getFollowStatus(followType, followId) {
 // 获取关注记录ID（用于取消关注）
 export function getFollowRecordId(followType, followId) {
     return request({
-        url: '/api/follows/record-id',
+        url: '/follows/record-id',
         method: 'get',
         params: { followType, followId }
     })
