@@ -24,8 +24,10 @@ spring:
   
   # 日期格式化
   jackson:
-    date-format: yyyy-MM-dd
+    date-format: yyyy-MM-dd HH:mm:ss
     time-zone: Asia/Shanghai
+    serialization:
+      write-dates-as-timestamps: false
 
 server:
   port: 8080
