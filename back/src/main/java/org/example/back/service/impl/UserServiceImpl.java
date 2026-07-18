@@ -172,6 +172,11 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
 
     @Override
     public String sendVerifyCode(String phone) {
+        // 60秒冷却
+        if (redisUtil.get("sms:cooldown:" + phone) != null) {
+            throw new RuntimeException("发送太频繁，请60秒后再试");
+        }
+        
         // 先验证手机号是否已注册
         LambdaQueryWrapper<User> wrapper = new LambdaQueryWrapper<>();
         wrapper.eq(User::getPhone, phone);
@@ -192,6 +197,9 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
         } catch (Exception e) {
             throw new RuntimeException("验证码发送失败: " + e.getMessage());
         }
+        
+        // 60秒冷却
+        redisUtil.set("sms:cooldown:" + phone, "1", 60, TimeUnit.SECONDS);
         
         return code;
     }
@@ -214,6 +222,11 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
 
     @Override
     public String sendRegisterCode(String phone) {
+        // 60秒冷却
+        if (redisUtil.get("sms:cooldown:" + phone) != null) {
+            throw new RuntimeException("发送太频繁，请60秒后再试");
+        }
+        
         // 检查手机号是否已被注册
         LambdaQueryWrapper<User> wrapper = new LambdaQueryWrapper<>();
         wrapper.eq(User::getPhone, phone);
@@ -234,6 +247,9 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
         } catch (Exception e) {
             throw new RuntimeException("验证码发送失败: " + e.getMessage());
         }
+        
+        // 60秒冷却
+        redisUtil.set("sms:cooldown:" + phone, "1", 60, TimeUnit.SECONDS);
         
         return code;
     }
