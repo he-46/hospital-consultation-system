@@ -11,7 +11,7 @@ import org.springframework.web.bind.annotation.*;
 import javax.annotation.Resource;
 
 @RestController
-@RequestMapping("/api/follows")
+@RequestMapping("/follows")
 public class FollowController {
     @Resource
     private FollowService followService;

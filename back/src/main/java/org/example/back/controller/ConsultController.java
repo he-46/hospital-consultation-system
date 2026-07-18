@@ -12,7 +12,7 @@ import org.springframework.web.bind.annotation.*;
 import javax.annotation.Resource;
 
 @RestController
-@RequestMapping("/api/consults")
+@RequestMapping("/consults")
 public class ConsultController {
     @Resource
     private ConsultService consultService;

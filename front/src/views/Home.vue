@@ -159,10 +159,11 @@ import { ref, onMounted } from 'vue'
 import { getIndexData } from '@/api/home'
 import Header from '@/components/Header.vue'
 import Footer from '@/components/Footer.vue'
+import { OfficeBuilding, User, Calendar, Document, FirstAidKit } from '@element-plus/icons-vue'
 
 export default {
   name: 'Home',
-  components: { Header, Footer },
+  components: { Header, Footer, OfficeBuilding, User, Calendar, Document, FirstAidKit },
   setup() {
     const bannerImages = ref([
       '/img/banner_01.jpeg',
@@ -451,6 +452,7 @@ export default {
     border-radius: 8px;
     transition: all 0.3s;
     border: 1px solid #e8eef3;
+    min-width: 0; // 防止flex子元素溢出
     
     &:hover {
       background: #e3f2fd;
@@ -473,12 +475,15 @@ export default {
     
     .disease-info {
       flex: 1;
-      overflow: hidden;
+      min-width: 0; // 防止flex子元素溢出
       
       h4 {
         color: #333;
         font-size: 14px;
         margin-bottom: 4px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
       }
       
       p {
@@ -487,6 +492,7 @@ export default {
         overflow: hidden;
         text-overflow: ellipsis;
         white-space: nowrap;
+        max-width: 100%;
       }
     }
   }
