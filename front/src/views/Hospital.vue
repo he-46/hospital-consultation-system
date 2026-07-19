@@ -2,6 +2,25 @@
   <div class="hospital-page">
     <Header />
     <div class="main-content container">
+      <!-- 科室选择 -->
+      <div class="section filter-section">
+        <div class="section-title">选择科室</div>
+        <div class="primary-departments">
+          <span v-for="dept in primaryDepartments" :key="dept.id"
+                :class="{active: selectedPrimary === dept.id}"
+                @click="selectPrimary(dept.id)">
+            {{ dept.name }}
+          </span>
+        </div>
+        <div v-if="selectedPrimary && selectedPrimary !== 0 && secondaryDepartments.length > 0" class="secondary-departments">
+          <span v-for="sub in secondaryDepartments" :key="sub.id"
+                :class="{active: selectedSecondary === sub.id}"
+                @click="selectSecondary(sub.id)">
+            {{ sub.name }}
+          </span>
+        </div>
+      </div>
+
       <div class="hospital-list">
         <router-link 
           v-for="hospital in hospitalList" 
@@ -44,8 +63,9 @@
 </template>
 
 <script>
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { getHospitalList } from '@/api/hospital'
+import { getDepartmentTree } from '@/api/department'
 import Header from '@/components/Header.vue'
 import Footer from '@/components/Footer.vue'
 
@@ -57,34 +77,87 @@ export default {
     const pageSize = ref(12)
     const total = ref(0)
     const hospitalList = ref([])
-    
+    const deptTree = ref([])
+    const selectedPrimary = ref(0)
+    const selectedSecondary = ref(null)
+
+    // 一级科室：全部 + 从树中取顶层节点
+    const primaryDepartments = computed(() => {
+      const list = [{ id: 0, name: '全部' }]
+      deptTree.value.forEach(d => list.push({ id: d.id, name: d.name }))
+      return list
+    })
+
+    // 当前选中的一级科室下的二级科室
+    const secondaryDepartments = computed(() => {
+      if (!selectedPrimary.value || selectedPrimary.value === 0) return []
+      const dept = deptTree.value.find(d => d.id === selectedPrimary.value)
+      return dept ? (dept.children || []) : []
+    })
+
+    const selectPrimary = (id) => {
+      selectedPrimary.value = id
+      selectedSecondary.value = null
+      pageNum.value = 1
+      loadHospitals()
+    }
+
+    const selectSecondary = (id) => {
+      selectedSecondary.value = id
+      pageNum.value = 1
+      loadHospitals()
+    }
+
     const loadHospitals = async () => {
       try {
-        const res = await getHospitalList({
+        const params = {
           pageNum: pageNum.value,
           pageSize: pageSize.value
-        })
+        }
+        // 选中科室时传 departmentId（后端自动展开一级科室的子科室）
+        if (selectedSecondary.value) {
+          params.departmentId = selectedSecondary.value
+        } else if (selectedPrimary.value && selectedPrimary.value !== 0) {
+          params.departmentId = selectedPrimary.value
+        }
+        const res = await getHospitalList(params)
         hospitalList.value = res.data.records || []
         total.value = res.data.total || 0
       } catch (error) {
         console.error(error)
       }
     }
-    
+
     const handlePageChange = (page) => {
       pageNum.value = page
       loadHospitals()
     }
-    
+
+    const loadDeptTree = async () => {
+      try {
+        const res = await getDepartmentTree()
+        deptTree.value = res.data || []
+      } catch (error) {
+        console.error('加载科室树失败', error)
+      }
+    }
+
     onMounted(() => {
+      loadDeptTree()
       loadHospitals()
     })
-    
+
     return {
       pageNum,
       pageSize,
       total,
       hospitalList,
+      primaryDepartments,
+      secondaryDepartments,
+      selectedPrimary,
+      selectedSecondary,
+      selectPrimary,
+      selectSecondary,
       handlePageChange
     }
   }
@@ -99,6 +172,23 @@ export default {
 
 .main-content {
   padding: 30px 0;
+}
+
+.section {
+  background: white;
+  border-radius: 8px;
+  padding: 25px;
+  margin-bottom: 25px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+}
+
+.section-title {
+  font-size: 18px;
+  font-weight: bold;
+  color: #333;
+  margin-bottom: 20px;
+  padding-bottom: 15px;
+  border-bottom: 2px solid #e3f2fd;
 }
 
 .filter-section {

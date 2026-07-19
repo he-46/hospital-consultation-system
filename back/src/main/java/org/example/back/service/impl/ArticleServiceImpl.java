@@ -4,22 +4,41 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import org.example.back.entity.Article;
+import org.example.back.entity.Department;
 import org.example.back.mapper.ArticleMapper;
+import org.example.back.mapper.DepartmentMapper;
 import org.example.back.service.ArticleService;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
+import java.util.ArrayList;
+import java.util.List;
+
 @Service
 public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article> implements ArticleService {
+
+    @Autowired
+    private DepartmentMapper departmentMapper;
 
     @Override
     public Page<Article> getArticlePage(Integer pageNum, Integer pageSize, Long departmentId) {
         Page<Article> page = new Page<>(pageNum, pageSize);
         LambdaQueryWrapper<Article> wrapper = new LambdaQueryWrapper<>();
         wrapper.eq(Article::getStatus, 1);
-        
+
         if (departmentId != null && departmentId > 0) {
-            wrapper.eq(Article::getDepartmentId, departmentId);
+            // 展开一级科室为所有子科室
+            List<Long> deptIds = new ArrayList<>();
+            deptIds.add(departmentId);
+            List<Department> children = departmentMapper.selectList(
+                    new LambdaQueryWrapper<Department>()
+                            .eq(Department::getParentId, departmentId)
+                            .eq(Department::getStatus, 1));
+            for (Department child : children) {
+                deptIds.add(child.getId());
+            }
+            wrapper.in(Article::getDepartmentId, deptIds);
         }
         
         wrapper.orderByDesc(Article::getPublishTime);

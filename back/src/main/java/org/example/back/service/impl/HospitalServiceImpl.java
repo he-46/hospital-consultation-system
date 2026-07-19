@@ -38,9 +38,15 @@ public class HospitalServiceImpl extends ServiceImpl<HospitalMapper, Hospital> i
         wrapper.eq(Hospital::getStatus, 1)
                .orderByDesc(Hospital::getFollowCount);
 
-        // 二级科室筛选
+        // 科室筛选（自动展开一级科室为子科室）
         if (departmentId != null && departmentId > 0) {
-            wrapper.in(Hospital::getId, getHospitalIdsByDepartment(departmentId));
+            Set<Long> hospitalIds = getHospitalIdsByDepartment(departmentId);
+            if (hospitalIds.isEmpty()) {
+                // 该科室下无医院，返回空结果
+                wrapper.apply("1=0");
+            } else {
+                wrapper.in(Hospital::getId, hospitalIds);
+            }
         }
 
         // 等级筛选
@@ -168,11 +174,23 @@ public class HospitalServiceImpl extends ServiceImpl<HospitalMapper, Hospital> i
     }
 
     /**
-     * 根据科室ID获取关联的医院ID列表
+     * 根据科室ID获取关联的医院ID列表（自动展开一级科室为所有子科室）
      */
     private Set<Long> getHospitalIdsByDepartment(Long departmentId) {
+        // 收集该科室及其所有子科室ID
+        Set<Long> deptIds = new HashSet<>();
+        deptIds.add(departmentId);
+        // 查子科室
+        List<Department> children = departmentMapper.selectList(
+                new LambdaQueryWrapper<Department>()
+                        .eq(Department::getParentId, departmentId)
+                        .eq(Department::getStatus, 1));
+        for (Department child : children) {
+            deptIds.add(child.getId());
+        }
+
         LambdaQueryWrapper<HospitalDepartment> wrapper = new LambdaQueryWrapper<>();
-        wrapper.eq(HospitalDepartment::getDepartmentId, departmentId);
+        wrapper.in(HospitalDepartment::getDepartmentId, deptIds);
         List<HospitalDepartment> links = hospitalDepartmentMapper.selectList(wrapper);
         return links.stream()
                 .map(HospitalDepartment::getHospitalId)

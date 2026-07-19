@@ -28,7 +28,17 @@ public class DiseaseServiceImpl extends ServiceImpl<DiseaseMapper, Disease> impl
         LambdaQueryWrapper<Disease> wrapper = new LambdaQueryWrapper<>();
         
         if (departmentId != null && departmentId > 0) {
-            wrapper.eq(Disease::getDepartmentId, departmentId);
+            // 展开一级科室为所有子科室
+            java.util.List<Long> deptIds = new java.util.ArrayList<>();
+            deptIds.add(departmentId);
+            java.util.List<Department> children = departmentMapper.selectList(
+                    new LambdaQueryWrapper<Department>()
+                            .eq(Department::getParentId, departmentId)
+                            .eq(Department::getStatus, 1));
+            for (Department child : children) {
+                deptIds.add(child.getId());
+            }
+            wrapper.in(Disease::getDepartmentId, deptIds);
         }
         
         wrapper.orderByDesc(Disease::getFollowCount);

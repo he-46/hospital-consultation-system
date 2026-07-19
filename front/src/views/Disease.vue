@@ -2,6 +2,25 @@
   <div class="disease-page">
     <Header />
     <div class="main-content container">
+      <!-- 科室选择 -->
+      <div class="section filter-section">
+        <div class="section-title">选择科室</div>
+        <div class="primary-departments">
+          <span v-for="dept in primaryDepartments" :key="dept.id"
+                :class="{active: selectedPrimary === dept.id}"
+                @click="selectPrimary(dept.id)">
+            {{ dept.name }}
+          </span>
+        </div>
+        <div v-if="selectedPrimary && selectedPrimary !== 0 && secondaryDepartments.length > 0" class="secondary-departments">
+          <span v-for="sub in secondaryDepartments" :key="sub.id"
+                :class="{active: selectedSecondary === sub.id}"
+                @click="selectSecondary(sub.id)">
+            {{ sub.name }}
+          </span>
+        </div>
+      </div>
+
       <div class="disease-list">
         <router-link 
           v-for="disease in diseaseList" 
@@ -43,8 +62,9 @@
 </template>
 
 <script>
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { getDiseaseList } from '@/api/disease'
+import { getDepartmentTree } from '@/api/department'
 import Header from '@/components/Header.vue'
 import Footer from '@/components/Footer.vue'
 import { FirstAidKit } from '@element-plus/icons-vue'
@@ -57,34 +77,85 @@ export default {
     const pageSize = ref(12)
     const total = ref(0)
     const diseaseList = ref([])
-    
+    const deptTree = ref([])
+    const selectedPrimary = ref(0)
+    const selectedSecondary = ref(null)
+
+    const primaryDepartments = computed(() => {
+      const list = [{ id: 0, name: '全部' }]
+      deptTree.value.forEach(d => list.push({ id: d.id, name: d.name }))
+      return list
+    })
+
+    const secondaryDepartments = computed(() => {
+      if (!selectedPrimary.value || selectedPrimary.value === 0) return []
+      const dept = deptTree.value.find(d => d.id === selectedPrimary.value)
+      return dept ? (dept.children || []) : []
+    })
+
+    const selectPrimary = (id) => {
+      selectedPrimary.value = id
+      selectedSecondary.value = null
+      pageNum.value = 1
+      loadDiseases()
+    }
+
+    const selectSecondary = (id) => {
+      selectedSecondary.value = id
+      pageNum.value = 1
+      loadDiseases()
+    }
+
     const loadDiseases = async () => {
       try {
-        const res = await getDiseaseList({
+        const params = {
           pageNum: pageNum.value,
           pageSize: pageSize.value
-        })
+        }
+        // 选中科室时传 departmentId（后端自动展开一级科室的子科室）
+        if (selectedSecondary.value) {
+          params.departmentId = selectedSecondary.value
+        } else if (selectedPrimary.value && selectedPrimary.value !== 0) {
+          params.departmentId = selectedPrimary.value
+        }
+        const res = await getDiseaseList(params)
         diseaseList.value = res.data.records || []
         total.value = res.data.total || 0
       } catch (error) {
         console.error(error)
       }
     }
-    
+
     const handlePageChange = (page) => {
       pageNum.value = page
       loadDiseases()
     }
-    
+
+    const loadDeptTree = async () => {
+      try {
+        const res = await getDepartmentTree()
+        deptTree.value = res.data || []
+      } catch (error) {
+        console.error('加载科室树失败', error)
+      }
+    }
+
     onMounted(() => {
+      loadDeptTree()
       loadDiseases()
     })
-    
+
     return {
       pageNum,
       pageSize,
       total,
       diseaseList,
+      primaryDepartments,
+      secondaryDepartments,
+      selectedPrimary,
+      selectedSecondary,
+      selectPrimary,
+      selectSecondary,
       handlePageChange
     }
   }
@@ -101,21 +172,32 @@ export default {
   padding: 30px 0;
 }
 
+.section {
+  background: white;
+  border-radius: 8px;
+  padding: 25px;
+  margin-bottom: 25px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+}
+
+.section-title {
+  font-size: 18px;
+  font-weight: bold;
+  color: #333;
+  margin-bottom: 20px;
+  padding-bottom: 15px;
+  border-bottom: 2px solid #e3f2fd;
+}
+
 .filter-section {
   margin-bottom: 25px;
-  
-  .filter-title {
-    font-size: 16px;
-    color: #333;
-    margin-bottom: 15px;
-    font-weight: bold;
-  }
-  
+
   .primary-departments {
     display: flex;
     flex-wrap: wrap;
     gap: 12px;
-    
+    margin-bottom: 25px;
+
     span {
       padding: 10px 20px;
       background: #f5f7fa;
@@ -123,9 +205,33 @@ export default {
       cursor: pointer;
       transition: all 0.3s;
       font-size: 14px;
-      
+      color: #333;
+      border: 2px solid transparent;
+
       &:hover { background: #e3f2fd; }
-      &.active { background: #1e88e5; color: white; }
+      &.active { background: #1e88e5; color: white; border-color: #1565c0; }
+    }
+  }
+
+  .secondary-departments {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    padding-left: 20px;
+    border-left: 3px solid #1e88e5;
+
+    span {
+      padding: 8px 16px;
+      background: #fafbfc;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: all 0.3s;
+      font-size: 13px;
+      color: #666;
+      border: 1px solid #e8eef3;
+
+      &:hover { background: #e3f2fd; border-color: #1e88e5; color: #1e88e5; }
+      &.active { background: #1e88e5; color: white; border-color: #1565c0; }
     }
   }
 }
