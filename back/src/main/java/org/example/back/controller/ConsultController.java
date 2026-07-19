@@ -10,6 +10,7 @@ import org.example.back.service.ConsultService;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import javax.annotation.Resource;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/consults")
@@ -46,8 +47,8 @@ public class ConsultController {
     }
 
     @PostMapping("/{id}/pay")
-    public Result<String> pay(@PathVariable Long id, @Validated @RequestBody PayConsultDTO dto){
-        String payUrl = consultService.payConsult(id, dto);
-        return Result.success(payUrl);
+    public Result<Map<String, Object>> pay(@PathVariable Long id, @Validated @RequestBody PayConsultDTO dto){
+        Map<String, Object> payInfo = consultService.payConsult(id, dto);
+        return Result.success(payInfo);
     }
 }

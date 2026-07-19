@@ -106,10 +106,52 @@ const routes = [
     component: () => import('@/views/Messages.vue'),
     meta: { requiresAuth: true }
   },
+
   {
-    path: '/review/:id',
-    name: 'Review',
-    component: () => import('@/views/Review.vue'),
+    path: '/phone-consult/:doctorId',
+    name: 'PhoneConsult',
+    component: () => import('@/views/PhoneConsult.vue')
+  },
+  {
+    path: '/consult-pay/:id',
+    name: 'ConsultPay',
+    component: () => import('@/views/ConsultPay.vue'),
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/consult-success/:id',
+    name: 'ConsultSuccess',
+    component: () => import('@/views/ConsultSuccess.vue'),
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/follow/hospital',
+    name: 'FollowHospital',
+    component: () => import('@/views/FollowHospital.vue'),
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/follow/doctor',
+    name: 'FollowDoctor',
+    component: () => import('@/views/FollowDoctor.vue'),
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/follow/disease',
+    name: 'FollowDisease',
+    component: () => import('@/views/FollowDisease.vue'),
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/my/review',
+    name: 'MyReviews',
+    component: () => import('@/views/MyReviews.vue'),
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/my/consult',
+    name: 'MyConsult',
+    component: () => import('@/views/MyConsult.vue'),
     meta: { requiresAuth: true }
   }
 ]

@@ -69,3 +69,35 @@ export function getDoctorsByHospital(hospitalId, params = {}) {
     params
   })
 }
+
+// 查询是否关注医生 followType=2代表医生
+export const getFollowStatus = (doctorId) => {
+  return request({
+    url: `/follows/check`,
+    method: 'get',
+    params: {
+      followType: 2,
+      followId: doctorId
+    }
+  })
+}
+
+// 关注医生
+export const followDoctor = (doctorId) => {
+  return request({
+    url: `/follows`,
+    method: 'post',
+    data: {
+      followType: 2,
+      followId: doctorId
+    }
+  })
+}
+
+// 取消关注（传入follow记录的主键id）
+export const unfollowDoctor = (followRecordId) => {
+  return request({
+    url: `/follows/${followRecordId}`,
+    method: 'delete'
+  })
+}

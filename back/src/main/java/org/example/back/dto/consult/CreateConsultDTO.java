@@ -1,4 +1,5 @@
 package org.example.back.dto.consult;
+import com.fasterxml.jackson.annotation.JsonFormat;
 import lombok.Data;
 import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.NotNull;
@@ -14,5 +15,6 @@ public class CreateConsultDTO {
     @NotBlank(message = "病情描述不能为空")
     private String diseaseDesc;
     @NotNull(message = "预约时间不能为空")
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     private LocalDateTime appointmentTime;
 }

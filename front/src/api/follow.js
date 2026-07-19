@@ -16,7 +16,7 @@ export function delFollow(id) {
     })
 }
 // 我的关注分页
-export function getFollowList(params) {
+export function getFollows(params) {
     return request({
         url: '/follows',
         method: 'get',

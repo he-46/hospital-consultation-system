@@ -4,9 +4,11 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import org.example.back.entity.Appointment;
+import org.example.back.entity.Consult;
 import org.example.back.entity.PaymentFlow;
 import org.example.back.entity.Schedule;
 import org.example.back.mapper.AppointmentMapper;
+import org.example.back.mapper.ConsultMapper;
 import org.example.back.mapper.PaymentFlowMapper;
 import org.example.back.mapper.ScheduleMapper;
 import org.example.back.service.PaymentFlowService;
@@ -24,6 +26,9 @@ public class PaymentFlowServiceImpl extends ServiceImpl<PaymentFlowMapper, Payme
 
     @Autowired
     private AppointmentMapper appointmentMapper;
+
+    @Autowired
+    private ConsultMapper consultMapper;
 
     @Autowired
     private ScheduleMapper scheduleMapper;
@@ -80,6 +85,42 @@ public class PaymentFlowServiceImpl extends ServiceImpl<PaymentFlowMapper, Payme
             return result;
         }
 
+        String thirdPartyTradeNo = "SIM" + LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMddHHmmss")) + UUID.randomUUID().toString().substring(0, 6).toUpperCase();
+        LocalDateTime now = LocalDateTime.now();
+
+        // 更新支付流水
+        LambdaUpdateWrapper<PaymentFlow> flowUpdate = new LambdaUpdateWrapper<>();
+        flowUpdate.eq(PaymentFlow::getId, flow.getId())
+                  .set(PaymentFlow::getPayStatus, 1)
+                  .set(PaymentFlow::getThirdPartyTradeNo, thirdPartyTradeNo)
+                  .set(PaymentFlow::getPaySuccessTime, now)
+                  .set(PaymentFlow::getUpdateTime, now);
+        this.update(flowUpdate);
+
+        // 处理咨询订单
+        if (flow.getBusinessType() != null && flow.getBusinessType() == 2) {
+            LambdaQueryWrapper<Consult> consultWrapper = new LambdaQueryWrapper<>();
+            consultWrapper.eq(Consult::getOrderNo, orderNo);
+            Consult consult = consultMapper.selectOne(consultWrapper);
+            if (consult == null) {
+                throw new RuntimeException("咨询订单不存在");
+            }
+            LambdaUpdateWrapper<Consult> consultUpdate = new LambdaUpdateWrapper<>();
+            consultUpdate.eq(Consult::getId, consult.getId())
+                        .set(Consult::getStatus, 2)
+                        .set(Consult::getPayTime, now)
+                        .set(Consult::getUpdateTime, now);
+            consultMapper.update(null, consultUpdate);
+
+            Map<String, Object> result = new HashMap<>();
+            result.put("orderNo", orderNo);
+            result.put("thirdPartyTradeNo", thirdPartyTradeNo);
+            result.put("paySuccessTime", now.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")));
+            result.put("status", 2);
+            return result;
+        }
+
+        // 处理挂号订单
         LambdaQueryWrapper<Appointment> apptWrapper = new LambdaQueryWrapper<>();
         apptWrapper.eq(Appointment::getOrderNo, orderNo);
         Appointment appointment = appointmentMapper.selectOne(apptWrapper);
@@ -100,17 +141,6 @@ public class PaymentFlowServiceImpl extends ServiceImpl<PaymentFlowMapper, Payme
         if (rows == 0) {
             throw new RuntimeException("号源已约满，支付失败");
         }
-
-        String thirdPartyTradeNo = "SIM" + LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMddHHmmss")) + UUID.randomUUID().toString().substring(0, 6).toUpperCase();
-        LocalDateTime now = LocalDateTime.now();
-
-        LambdaUpdateWrapper<PaymentFlow> flowUpdate = new LambdaUpdateWrapper<>();
-        flowUpdate.eq(PaymentFlow::getId, flow.getId())
-                  .set(PaymentFlow::getPayStatus, 1)
-                  .set(PaymentFlow::getThirdPartyTradeNo, thirdPartyTradeNo)
-                  .set(PaymentFlow::getPaySuccessTime, now)
-                  .set(PaymentFlow::getUpdateTime, now);
-        this.update(flowUpdate);
 
         LambdaUpdateWrapper<Appointment> apptUpdate = new LambdaUpdateWrapper<>();
         apptUpdate.eq(Appointment::getId, appointment.getId())

@@ -11,14 +11,20 @@ import org.example.back.dto.consult.CreateConsultDTO;
 import org.example.back.dto.consult.PayConsultDTO;
 import org.example.back.entity.Consult;
 import org.example.back.entity.Doctor;
+import org.example.back.entity.Hospital;
+import org.example.back.entity.PaymentFlow;
 import org.example.back.mapper.ConsultMapper;
 import org.example.back.mapper.DoctorMapper;
+import org.example.back.mapper.HospitalMapper;
+import org.example.back.mapper.PaymentFlowMapper;
 import org.example.back.service.ConsultService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import javax.annotation.Resource;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.UUID;
 
 @Service
@@ -27,15 +33,25 @@ public class ConsultServiceImpl extends ServiceImpl<ConsultMapper, Consult> impl
     @Resource
     private DoctorMapper doctorMapper;
 
+    @Resource
+    private HospitalMapper hospitalMapper;
+
+    @Resource
+    private PaymentFlowMapper paymentFlowMapper;
+
     @Override
     @Transactional(rollbackFor = Exception.class)
     public Consult createConsult(CreateConsultDTO dto) {
         Long userId = UserContext.getUserId();
+        if (userId == null) {
+            throw new BusinessException(30001, "请先登录");
+        }
         Doctor doctor = doctorMapper.selectById(dto.getDoctorId());
         if (doctor == null) {
             throw new BusinessException(40000, "医生不存在");
         }
-        BigDecimal amount = doctor.getPrice();
+        // 金额 = 医生咨询价格
+        BigDecimal amount = doctor.getPrice() != null ? doctor.getPrice() : BigDecimal.ZERO;
 
         Consult consult = new Consult();
         consult.setOrderNo(UUID.randomUUID().toString().replace("-",""));
@@ -50,6 +66,7 @@ public class ConsultServiceImpl extends ServiceImpl<ConsultMapper, Consult> impl
         consult.setStatus(ConsultStatusEnum.PENDING_PAY.getCode());
         consult.setCreateTime(LocalDateTime.now());
         baseMapper.insert(consult);
+        System.out.println("=== 创建咨询成功, ID=" + consult.getId() + ", orderNo=" + consult.getOrderNo());
         return consult;
     }
 
@@ -57,21 +74,34 @@ public class ConsultServiceImpl extends ServiceImpl<ConsultMapper, Consult> impl
     public IPage<Consult> getMyConsultPage(Long page, Long size, Integer status) {
         Long userId = UserContext.getUserId();
         Page<Consult> pageObj = new Page<>(page, size);
-        return baseMapper.selectPage(pageObj, Wrappers.<Consult>lambdaQuery()
-                .eq(Consult::getUserId, userId)
-                .eq(status != null, Consult::getStatus, status)
-                .orderByDesc(Consult::getCreateTime));
+        return baseMapper.selectConsultPage(pageObj, userId, status);
     }
 
     @Override
     public Consult getConsultDetail(Long id) {
         Long userId = UserContext.getUserId();
+        System.out.println("=== 查询咨询详情, 收到的ID=" + id);
         Consult consult = baseMapper.selectById(id);
         if (consult == null) {
             throw new BusinessException(40000, "订单不存在");
         }
         if (!consult.getUserId().equals(userId)) {
             throw new BusinessException(40000, "无权查看该订单");
+        }
+        // 补充医生信息
+        if (consult.getDoctorId() != null) {
+            Doctor doctor = doctorMapper.selectById(consult.getDoctorId());
+            if (doctor != null) {
+                consult.setDoctorName(doctor.getName());
+                consult.setDoctorTitle(doctor.getTitle());
+                // 补充医院名称
+                if (doctor.getHospitalId() != null) {
+                    Hospital hospital = hospitalMapper.selectById(doctor.getHospitalId());
+                    if (hospital != null) {
+                        consult.setHospitalName(hospital.getName());
+                    }
+                }
+            }
         }
         return consult;
     }
@@ -98,14 +128,53 @@ public class ConsultServiceImpl extends ServiceImpl<ConsultMapper, Consult> impl
 
     @Override
     @Transactional(rollbackFor = Exception.class)
-    public String payConsult(Long id, PayConsultDTO dto) {
-        Consult consult = getConsultDetail(id);
+    public Map<String, Object> payConsult(Long id, PayConsultDTO dto) {
+        Long userId = UserContext.getUserId();
+        Consult consult = baseMapper.selectById(id);
+        if (consult == null) {
+            throw new BusinessException(40000, "订单不存在");
+        }
+        if (!consult.getUserId().equals(userId)) {
+            throw new BusinessException(40000, "无权操作");
+        }
         if (!consult.getStatus().equals(ConsultStatusEnum.PENDING_PAY.getCode())) {
             throw new BusinessException(40000, "订单状态不支持支付");
         }
-        consult.setStatus(ConsultStatusEnum.PAID.getCode());
-        consult.setPayTime(LocalDateTime.now());
+
+        // 检查是否已支付
+        Long existCount = paymentFlowMapper.selectCount(Wrappers.<PaymentFlow>lambdaQuery()
+                .eq(PaymentFlow::getBusinessOrderNo, consult.getOrderNo())
+                .eq(PaymentFlow::getPayStatus, 1));
+        if (existCount > 0) {
+            throw new BusinessException(40000, "该订单已支付");
+        }
+
+        LocalDateTime now = LocalDateTime.now();
+        String tradeNo = "SIM" + now.format(java.time.format.DateTimeFormatter.ofPattern("yyyyMMddHHmmss")) + UUID.randomUUID().toString().substring(0, 6).toUpperCase();
+
+        // 创建已支付流水
+        PaymentFlow flow = new PaymentFlow();
+        flow.setBusinessOrderNo(consult.getOrderNo());
+        flow.setBusinessType(2);
+        flow.setPayMethod(dto.getPayType() != null ? dto.getPayType() : 1);
+        flow.setActualAmount(consult.getAmount());
+        flow.setPayStatus(1); // 直接已支付
+        flow.setThirdPartyTradeNo(tradeNo);
+        flow.setPaySuccessTime(now);
+        flow.setCreateTime(now);
+        paymentFlowMapper.insert(flow);
+
+        // 更新咨询订单状态为已完成（模拟支付后直接完成）
+        consult.setStatus(ConsultStatusEnum.FINISHED.getCode());
+        consult.setPayTime(now);
         baseMapper.updateById(consult);
-        return "模拟支付单号:" + consult.getOrderNo();
+
+        // 返回支付结果
+        Map<String, Object> result = new HashMap<>();
+        result.put("orderNo", consult.getOrderNo());
+        result.put("amount", consult.getAmount());
+        result.put("thirdPartyTradeNo", tradeNo);
+        result.put("paySuccessTime", now.format(java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")));
+        return result;
     }
 }

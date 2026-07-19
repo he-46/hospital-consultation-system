@@ -112,13 +112,22 @@ public class JwtInterceptor implements HandlerInterceptor {
             String username = claims.getSubject();
             request.setAttribute("userId", userId);
             request.setAttribute("username", username);
+            // 同时设置 UserContext，供 Service 层使用
             UserContext.setUserId(userId);
-            
+            // 新增打印
+            System.out.println("拦截器存入userId："+userId);
+
             return true;
         } catch (Exception e) {
             sendUnauthorizedResponse(response, "登录已失效，请重新登录");
             return false;
         }
+    }
+
+    @Override
+    public void afterCompletion(HttpServletRequest request, HttpServletResponse response, Object handler, Exception ex) {
+        // 清除 ThreadLocal，防止内存泄漏
+        UserContext.clear();
     }
 
     private void sendUnauthorizedResponse(HttpServletResponse response, String message) throws IOException {
