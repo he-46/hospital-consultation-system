@@ -2,6 +2,7 @@ package org.example.back.entity;
 
 import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableId;
+import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableName;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.fasterxml.jackson.databind.ser.std.ToStringSerializer;
@@ -27,6 +28,7 @@ public class Appointment implements Serializable {
 
     private Long hospitalId;
 
+    @TableField(exist = false)
     private Long scheduleId;
 
     private String patientName;

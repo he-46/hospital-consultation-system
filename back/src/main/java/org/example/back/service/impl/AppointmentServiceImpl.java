@@ -118,7 +118,7 @@ public class AppointmentServiceImpl extends ServiceImpl<AppointmentMapper, Appoi
         java.util.List<Map<String, Object>> records = new java.util.ArrayList<>();
         for (Appointment a : result.getRecords()) {
             Map<String, Object> item = new HashMap<>();
-            item.put("id", a.getId());
+            item.put("id", a.getId().toString());
             item.put("orderNo", a.getOrderNo());
             item.put("userId", a.getUserId());
             item.put("doctorId", a.getDoctorId());
@@ -209,10 +209,16 @@ public class AppointmentServiceImpl extends ServiceImpl<AppointmentMapper, Appoi
         this.update(wrapper);
 
         if (currentStatus == 2) {
-            Long scheduleId = appointment.getScheduleId();
-            if (scheduleId != null) {
+            // 通过 doctorId+hospitalId+date+time 定位排班并回滚号源
+            LambdaQueryWrapper<Schedule> scheduleQuery = new LambdaQueryWrapper<>();
+            scheduleQuery.eq(Schedule::getDoctorId, appointment.getDoctorId())
+                         .eq(Schedule::getHospitalId, appointment.getHospitalId())
+                         .eq(Schedule::getScheduleDate, appointment.getAppointmentDate())
+                         .eq(Schedule::getTimeSlot, appointment.getAppointmentTime());
+            Schedule schedule = scheduleMapper.selectOne(scheduleQuery);
+            if (schedule != null) {
                 LambdaUpdateWrapper<Schedule> scheduleUpdate = new LambdaUpdateWrapper<>();
-                scheduleUpdate.eq(Schedule::getId, scheduleId)
+                scheduleUpdate.eq(Schedule::getId, schedule.getId())
                               .gt(Schedule::getRemainCount, 0)
                               .setSql("remain_count = remain_count + 1");
                 scheduleMapper.update(null, scheduleUpdate);
