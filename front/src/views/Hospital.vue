@@ -21,6 +21,20 @@
         </div>
       </div>
 
+      <!-- 医院等级筛选 -->
+      <div class="section filter-section">
+        <div class="section-title">医院等级</div>
+        <div class="level-filters">
+          <span 
+            v-for="level in hospitalLevels" 
+            :key="level.value"
+            :class="{active: selectedLevel === level.value}"
+            @click="selectLevel(level.value)">
+            {{ level.label }}
+          </span>
+        </div>
+      </div>
+
       <div class="hospital-list">
         <router-link 
           v-for="hospital in hospitalList" 
@@ -80,6 +94,15 @@ export default {
     const deptTree = ref([])
     const selectedPrimary = ref(0)
     const selectedSecondary = ref(null)
+    const selectedLevel = ref('')
+    const hospitalLevels = [
+      { value: '', label: '全部' },
+      { value: '三级甲等', label: '三级甲等' },
+      { value: '三级乙等', label: '三级乙等' },
+      { value: '二级甲等', label: '二级甲等' },
+      { value: '二级乙等', label: '二级乙等' },
+      { value: '一级医院', label: '一级医院' }
+    ]
 
     // 一级科室：全部 + 从树中取顶层节点
     const primaryDepartments = computed(() => {
@@ -108,6 +131,12 @@ export default {
       loadHospitals()
     }
 
+    const selectLevel = (level) => {
+      selectedLevel.value = level
+      pageNum.value = 1
+      loadHospitals()
+    }
+
     const loadHospitals = async () => {
       try {
         const params = {
@@ -119,6 +148,10 @@ export default {
           params.departmentId = selectedSecondary.value
         } else if (selectedPrimary.value && selectedPrimary.value !== 0) {
           params.departmentId = selectedPrimary.value
+        }
+        // 医院等级筛选
+        if (selectedLevel.value) {
+          params.level = selectedLevel.value
         }
         const res = await getHospitalList(params)
         hospitalList.value = res.data.records || []
@@ -142,8 +175,8 @@ export default {
       }
     }
 
-    onMounted(() => {
-      loadDeptTree()
+    onMounted(async () => {
+      await loadDeptTree()
       loadHospitals()
     })
 
@@ -158,7 +191,10 @@ export default {
       selectedSecondary,
       selectPrimary,
       selectSecondary,
-      handlePageChange
+      handlePageChange,
+      selectedLevel,
+      hospitalLevels,
+      selectLevel
     }
   }
 }
@@ -252,6 +288,30 @@ export default {
         background: #1e88e5;
         color: white;
         border-color: #1e88e5;
+      }
+    }
+  }
+  
+  .level-filters {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    
+    span {
+      padding: 10px 20px;
+      background: #f5f7fa;
+      border-radius: 20px;
+      cursor: pointer;
+      transition: all 0.3s;
+      font-size: 14px;
+      
+      &:hover {
+        background: #e3f2fd;
+      }
+      
+      &.active {
+        background: #1e88e5;
+        color: white;
       }
     }
   }
