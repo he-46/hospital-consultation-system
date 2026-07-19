@@ -62,6 +62,9 @@ public class JwtInterceptor implements HandlerInterceptor {
             "/disease/search",
             // 文件上传
             "/file/uploadAvatar",
+            // 支付宝回调
+            "/alipay/notifyUrl",
+            "/alipay/returnUrl",
             // 静态资源
             "/uploads"
     );

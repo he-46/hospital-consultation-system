@@ -58,6 +58,8 @@ public class WebConfig implements WebMvcConfigurer {
                         "/disease/**",
                         "/schedule/**",
                         "/search/**",
+                        "/alipay/notifyUrl",
+                        "/alipay/returnUrl",
                         "/payment/callback",
                         "/file/**",
                         "/uploads/**"

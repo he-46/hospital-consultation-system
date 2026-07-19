@@ -59,6 +59,7 @@ import { ref, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { getAppointmentDetail, payAppointment, paymentCallback } from '@/api/appointment'
+import { alipayPay } from '@/api/alipay'
 import Header from '@/components/Header.vue'
 import Footer from '@/components/Footer.vue'
 
@@ -91,10 +92,24 @@ export default {
     const handlePay = async () => {
       loading.value = true
       try {
-        await payAppointment(route.params.id, { payMethod: payMethod.value })
-        const cbRes = await paymentCallback(order.value.orderNo)
-        const cbData = cbRes.data
-        router.push(`/reservation-success/${route.params.id}?orderNo=${order.value.orderNo}&tradeNo=${cbData.thirdPartyTradeNo || ''}`)
+        if (payMethod.value === 1) {
+          // 支付宝支付
+          const res = await alipayPay({
+            widout_trade_no: order.value.orderNo,
+            widtotal_amount: String(order.value.amount || 0),
+            widsubject: '挂号预约-' + order.value.doctorName,
+            widbody: '就诊人：' + order.value.patientName
+          })
+          const payWindow = window.open('', '_blank')
+          payWindow.document.write(res.data)
+          payWindow.document.close()
+        } else {
+          // 微信支付（模拟）
+          await payAppointment(route.params.id, { payMethod: payMethod.value })
+          const cbRes = await paymentCallback(order.value.orderNo)
+          const cbData = cbRes.data
+          router.push(`/reservation-success/${route.params.id}?orderNo=${order.value.orderNo}&tradeNo=${cbData.thirdPartyTradeNo || ''}`)
+        }
       } catch (error) {
         ElMessage.error(error?.response?.data?.message || error?.message || '支付失败，请重试')
       } finally {

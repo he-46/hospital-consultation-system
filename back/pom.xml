@@ -90,6 +90,13 @@
             <artifactId>spring-boot-starter-validation</artifactId>
         </dependency>
 
+        <!-- 支付宝沙箱SDK -->
+        <dependency>
+            <groupId>com.alipay.sdk</groupId>
+            <artifactId>alipay-sdk-java</artifactId>
+            <version>3.7.110.ALL</version>
+        </dependency>
+
         <!-- 阿里云短信服务 -->
         <dependency>
             <groupId>com.aliyun</groupId>
