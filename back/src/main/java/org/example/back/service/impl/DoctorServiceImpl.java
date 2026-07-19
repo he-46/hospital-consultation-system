@@ -167,7 +167,7 @@ public class DoctorServiceImpl extends ServiceImpl<DoctorMapper, Doctor> impleme
         Page<Map<String, Object>> resultPage = new Page<>(pageNum, pageSize, reviewPage.getTotal());
         List<Map<String, Object>> records = reviewPage.getRecords().stream().map(r -> {
             Map<String, Object> map = new HashMap<>();
-            map.put("id", r.getId());
+            map.put("id", r.getId().toString());
             map.put("rating", r.getRating());
             map.put("content", r.getContent());
             map.put("createTime", r.getCreateTime());
