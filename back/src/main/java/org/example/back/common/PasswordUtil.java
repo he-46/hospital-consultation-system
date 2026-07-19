@@ -67,17 +67,10 @@ public class PasswordUtil {
      * @return 是否匹配
      */
     public static boolean verifyStoredPassword(String inputPassword, String storedPassword) {
-        if (storedPassword == null || !storedPassword.contains(":")) {
-            // 兼容旧密码（直接MD5存储的密码）
-            return md5(inputPassword).equals(storedPassword);
-        }
+        if (storedPassword == null || !storedPassword.contains(":")) return false;
         String[] parts = storedPassword.split(":");
-        if (parts.length != 2) {
-            return false;
-        }
-        String encrypted = parts[0];
-        String salt = parts[1];
-        return encryptPassword(inputPassword, salt).equals(encrypted);
+        if (parts.length != 2) return false;
+        return encryptPassword(inputPassword, parts[1]).equals(parts[0]);
     }
 
     /**

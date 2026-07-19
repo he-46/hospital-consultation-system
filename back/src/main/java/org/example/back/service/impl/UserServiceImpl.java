@@ -47,8 +47,8 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
             throw new RuntimeException("用户不存在");
         }
         
-        // 使用MD5+盐码验证密码
-        if(!password.equals(user.getPassword())){
+        // 验证密码（兼容明文和MD5+盐码两种格式）
+        if (!PasswordUtil.verifyStoredPassword(password, user.getPassword())) {
             throw new RuntimeException("密码错误");
         }
         
