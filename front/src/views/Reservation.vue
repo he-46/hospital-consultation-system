@@ -28,6 +28,10 @@
             </el-select>
           </el-form-item>
           
+          <el-form-item label="选择就诊人">
+            <PatientSelector @select="onPatientSelect" />
+          </el-form-item>
+
           <el-form-item label="就诊人" prop="patientName">
             <el-input v-model="form.patientName" placeholder="请输入就诊人姓名" />
           </el-form-item>
@@ -76,10 +80,11 @@ import { getDoctorDetail, getDoctorSchedule } from '@/api/doctor'
 import { createAppointment } from '@/api/appointment'
 import Header from '@/components/Header.vue'
 import Footer from '@/components/Footer.vue'
+import PatientSelector from '@/components/PatientSelector.vue'
 
 export default {
   name: 'Reservation',
-  components: { Header, Footer },
+  components: { Header, Footer, PatientSelector },
   setup() {
     const route = useRoute()
     const router = useRouter()
@@ -158,6 +163,29 @@ export default {
       }
     })
 
+    const onPatientSelect = (patient) => {
+      form.value.patientName = patient.name || ''
+      form.value.patientPhone = patient.phone || ''
+      form.value.patientIdCard = patient.idCard || ''
+      form.value.patientGender = patient.gender || 1
+      if (patient.idCard && patient.idCard.length === 18) {
+        const birthStr = patient.idCard.substring(6, 14)
+        const birthYear = parseInt(birthStr.substring(0, 4))
+        const birthMonth = parseInt(birthStr.substring(4, 6))
+        const birthDay = parseInt(birthStr.substring(6, 8))
+        const birthDate = new Date(birthYear, birthMonth - 1, birthDay)
+        const today = new Date()
+        let age = today.getFullYear() - birthDate.getFullYear()
+        const m = today.getMonth() - birthDate.getMonth()
+        if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
+          age--
+        }
+        if (age >= 0 && age <= 150) {
+          form.value.patientAge = age
+        }
+      }
+    }
+
     const submitReservation = async () => {
       if (!formRef.value) return
 
@@ -207,6 +235,7 @@ export default {
       formRef,
       loading,
       selectSchedule,
+      onPatientSelect,
       submitReservation
     }
   }

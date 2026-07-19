@@ -39,6 +39,9 @@
 
         <!-- 咨询表单 -->
         <el-form :model="form" :rules="rules" ref="formRef" label-width="100px" class="consult-form">
+          <el-form-item label="选择就诊人">
+            <PatientSelector @select="onPatientSelect" />
+          </el-form-item>
           <el-form-item label="咨询人姓名" prop="patientName">
             <el-input v-model="form.patientName" placeholder="请输入您的姓名" />
           </el-form-item>
@@ -79,6 +82,7 @@ import { ElMessage } from 'element-plus'
 import { User } from '@element-plus/icons-vue'
 import Header from '@/components/Header.vue'
 import Footer from '@/components/Footer.vue'
+import PatientSelector from '@/components/PatientSelector.vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -105,6 +109,11 @@ const rules = {
 
 const disabledDate = (time) => {
   return time.getTime() < Date.now() - 8.64e7 // 不能选过去的时间
+}
+
+const onPatientSelect = (patient) => {
+  form.patientName = patient.name || ''
+  form.patientPhone = patient.phone || ''
 }
 
 // 加载医生详情
