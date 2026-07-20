@@ -55,7 +55,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, onUnmounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { getConsultDetail, payConsult } from '@/api/consult'
@@ -68,6 +68,37 @@ const router = useRouter()
 const loading = ref(false)
 const payMethod = ref(1)
 const order = ref({})
+let pollTimer = null
+
+const pollPaymentStatus = () => {
+  const consultId = route.params.id
+  if (!consultId || consultId === 'undefined') return
+  if (pollTimer) clearInterval(pollTimer) // 防止重复创建定时器
+  let count = 0
+  const maxCount = 60 // 最多轮询2分钟
+  pollTimer = setInterval(async () => {
+    count++
+    if (count > maxCount) {
+      clearInterval(pollTimer)
+      pollTimer = null
+      return
+    }
+    try {
+      const res = await getConsultDetail(consultId)
+      if (res.code === 200 && res.data) {
+        const status = res.data.status
+        console.log('轮询支付状态:', status, typeof status)
+        if (status == 2 || status == 4) {
+          clearInterval(pollTimer)
+          pollTimer = null
+          router.push(`/consult-success/${consultId}?orderNo=${res.data.orderNo || ''}`)
+        }
+      }
+    } catch (e) {
+      // 忽略轮询错误
+    }
+  }, 2000)
+}
 
 const loadOrder = async () => {
   try {
@@ -91,16 +122,27 @@ const handlePay = async () => {
   loading.value = true
   try {
     if (payMethod.value === 1) {
-      // 支付宝支付
+      // 支付宝支付：解析返回的HTML表单，提交到新窗口
       const res = await alipayPay({
         widout_trade_no: order.value.orderNo,
         widtotal_amount: String(order.value.amount || 0),
         widsubject: '电话咨询-' + order.value.doctorName,
         widbody: '咨询人：' + order.value.patientName
       })
-      const payWindow = window.open('', '_blank')
-      payWindow.document.write(res.data)
-      payWindow.document.close()
+      const tempDiv = document.createElement('div')
+      tempDiv.innerHTML = res.data
+      const form = tempDiv.querySelector('form')
+      if (form) {
+        form.target = 'alipayPayWindow'
+        form.style.display = 'none'
+        document.body.appendChild(form)
+        form.submit()
+        document.body.removeChild(form)
+        pollPaymentStatus() // 开始轮询支付状态
+      } else {
+        const blob = new Blob([res.data], { type: 'text/html' })
+        window.open(URL.createObjectURL(blob), '_blank')
+      }
     } else {
       // 微信支付（模拟）
       const res = await payConsult(route.params.id, { payType: payMethod.value })
@@ -117,8 +159,26 @@ const handlePay = async () => {
   }
 }
 
+const handlePayMessage = (event) => {
+  if (event.data && event.data.type === 'PAY_SUCCESS') {
+    // 优先用后端返回的 orderId，兜底用 route params
+    const id = event.data.orderId || route.params.id
+    if (!id || id === 'undefined') return
+    router.push(`/consult-success/${id}?orderNo=${event.data.orderNo}&tradeNo=${event.data.tradeNo || ''}`)
+  }
+}
+
 onMounted(() => {
   loadOrder()
+  window.addEventListener('message', handlePayMessage)
+})
+
+onUnmounted(() => {
+  window.removeEventListener('message', handlePayMessage)
+  if (pollTimer) {
+    clearInterval(pollTimer)
+    pollTimer = null
+  }
 })
 </script>
 

@@ -21,7 +21,6 @@ import org.springframework.web.bind.annotation.*;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
-import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
 
@@ -102,8 +101,10 @@ public class AlipayController {
             if ("TRADE_SUCCESS".equals(trade_status) || "TRADE_FINISHED".equals(trade_status)) {
                 try {
                     paymentFlowService.callback(out_trade_no, trade_no);
+                    System.out.println("notifyUrl回调成功: orderNo=" + out_trade_no + ", tradeNo=" + trade_no);
                 } catch (Exception e) {
-                    // 业务异常不影响给支付宝返回 success
+                    System.err.println("notifyUrl回调失败: orderNo=" + out_trade_no + ", tradeNo=" + trade_no);
+                    e.printStackTrace();
                 }
             }
 
@@ -134,29 +135,48 @@ public class AlipayController {
                 if (cbResult != null && cbResult.get("thirdPartyTradeNo") != null) {
                     tradeNo = cbResult.get("thirdPartyTradeNo").toString();
                 }
+                System.out.println("支付宝回调成功: orderNo=" + out_trade_no + ", tradeNo=" + tradeNo);
             } catch (Exception e) {
-                // 可能已回调过，忽略
+                System.err.println("支付宝回调失败: orderNo=" + out_trade_no + ", trade_no=" + trade_no);
+                e.printStackTrace();
             }
 
-            // 根据订单号查找对应的挂号/咨询订单，跳转到对应成功页
-            String redirectUrl = "http://localhost:3000/#/personal"; // 兜底
-
-            String query = "?orderNo=" + URLEncoder.encode(out_trade_no, "UTF-8")
-                    + "&tradeNo=" + URLEncoder.encode(tradeNo, "UTF-8");
-
+            // 根据订单号查找对应的挂号/咨询订单，获取跳转信息
+            String orderType = "unknown";
+            String orderId = "";
             Appointment appointment = appointmentMapper.selectOne(
                     new LambdaQueryWrapper<Appointment>().eq(Appointment::getOrderNo, out_trade_no));
             if (appointment != null) {
-                redirectUrl = "http://localhost:3000/#/reservation-success/" + appointment.getId() + query;
+                orderType = "appointment";
+                orderId = String.valueOf(appointment.getId());
             } else {
                 Consult consult = consultMapper.selectOne(
                         new LambdaQueryWrapper<Consult>().eq(Consult::getOrderNo, out_trade_no));
                 if (consult != null) {
-                    redirectUrl = "http://localhost:3000/#/consult-success/" + consult.getId() + query;
+                    orderType = "consult";
+                    orderId = String.valueOf(consult.getId());
                 }
             }
 
-            response.sendRedirect(redirectUrl);
+            // 返回HTML页面，通知原页面后自动关闭弹窗
+            response.setContentType("text/html;charset=utf-8");
+            response.getWriter().println("<!DOCTYPE html><html><head><meta charset='utf-8'><title>支付成功</title>" +
+                "<style>body{font-family:'Microsoft YaHei',sans-serif;text-align:center;padding-top:80px;background:#f5f7fa;}" +
+                ".success{color:#4caf50;font-size:48px;}.info{margin-top:20px;color:#666;font-size:14px;}</style></head><body>" +
+                "<div class='success'>&#10003;</div><h2>支付成功</h2>" +
+                "<div class='info'>订单号：" + out_trade_no + "<br/>交易号：" + tradeNo + "</div>" +
+                "<div class='info' style='margin-top:10px;color:#999;'>窗口即将关闭，请返回原页面查看...</div>" +
+                "<script>" +
+                "if(window.opener){" +
+                "  window.opener.postMessage({" +
+                "    type:'PAY_SUCCESS'," +
+                "    orderType:'" + orderType + "'," +
+                "    orderId:'" + orderId + "'," +
+                "    orderNo:'" + out_trade_no + "'," +
+                "    tradeNo:'" + tradeNo + "'" +
+                "  }, '*');" +
+                "} setTimeout(function(){window.close();},2000);" +
+                "</script></body></html>");
         } else {
             response.getWriter().println("验签失败");
         }

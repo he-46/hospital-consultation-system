@@ -74,8 +74,10 @@ const tradeNo = ref(route.query.tradeNo || '')
 const order = ref({})
 
 onMounted(async () => {
+  const id = route.params.id
+  if (!id || id === 'undefined') return
   try {
-    const res = await getConsultDetail(route.params.id)
+    const res = await getConsultDetail(id)
     const data = res.data || {}
     order.value = data
     if (!orderNo.value) {

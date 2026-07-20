@@ -78,8 +78,10 @@ export default {
     const order = ref({})
 
     const loadOrder = async () => {
+      const id = route.params.id
+      if (!id || id === 'undefined') return
       try {
-        const res = await getAppointmentDetail(route.params.id)
+        const res = await getAppointmentDetail(id)
         const data = res.data
         const appt = data.appointment || {}
         order.value = {
