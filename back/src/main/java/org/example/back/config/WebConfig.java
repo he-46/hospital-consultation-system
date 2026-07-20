@@ -54,6 +54,37 @@ public class WebConfig implements WebMvcConfigurer {
                         "/user/sendCode",
                         "/user/checkCode",
                         "/user/resetPassword",
+                        // 医院浏览相关
+                        "/hospital/list",
+                        "/hospital/hot",
+                        "/hospital/detail",
+                        "/hospital/search",
+                        // 科室相关
+                        "/department/primary",
+                        "/department/secondary",
+                        "/department/tree",
+                        "/department/list",
+                        // 医生浏览相关
+                        "/doctor/list",
+                        "/doctor/detail",
+                        "/doctor/search",
+                        "/doctors",
+                        "/schedule/list",
+                        "/schedule/detail",
+                        // 文章科普相关
+                        "/article/list",
+                        "/article/hot",
+                        "/article/detail",
+                        "/article/search",
+                        // 疾病百科相关
+                        "/disease/list",
+                        "/disease/hot",
+                        "/disease/detail",
+                        "/disease/search",
+                        // 搜索相关
+                        "/search/**",
+                        // 配置相关
+                        "/config/**",
                         // 支付宝回调（需外部回调）
                         "/alipay/notifyUrl",
                         "/alipay/returnUrl",
