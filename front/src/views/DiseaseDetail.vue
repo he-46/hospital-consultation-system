@@ -81,6 +81,7 @@ export default {
     }
 
     const loadFollowStatus = async () => {
+      if (!localStorage.getItem('token')) return
       try {
         const res = await checkFollow({ followType: 3, followId: route.params.id })
         isFollowed.value = res.data === true

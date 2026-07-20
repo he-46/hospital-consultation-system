@@ -145,8 +145,9 @@ export default {
     const isFollow = ref(false)
     const myFollowId = ref(null)  // 当前用户对当前医生的关注记录ID
 
-    // 加载关注状态
+    // 加载关注状态（仅登录后）
     const loadFollowStatus = async () => {
+      if (!localStorage.getItem('token')) return
       try {
         const res = await checkFollow({ followType: 2, followId: route.params.id })
         isFollow.value = res.data === true

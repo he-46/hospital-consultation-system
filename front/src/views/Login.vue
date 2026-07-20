@@ -56,7 +56,7 @@
 
 <script>
 import { reactive, ref } from 'vue'
-import { useRouter } from 'vue-router'
+import { useRouter, useRoute } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { login } from '@/api/user'
 
@@ -64,6 +64,7 @@ export default {
   name: 'Login',
   setup() {
     const router = useRouter()
+    const route = useRoute()
     const formRef = ref(null)
     const loading = ref(false)
     
@@ -89,9 +90,10 @@ export default {
             console.log('登录返回数据:', res.data)
             localStorage.setItem('token', res.data.token)
             localStorage.setItem('userInfo', JSON.stringify(res.data))
-            console.log('保存的userInfo:', res.data)
             ElMessage.success('登录成功')
-            router.push('/home')
+            // 登录成功后跳转回原页面或首页
+            const redirect = route.query.redirect || '/home'
+            router.push(redirect)
           } catch (error) {
             console.error(error)
           } finally {

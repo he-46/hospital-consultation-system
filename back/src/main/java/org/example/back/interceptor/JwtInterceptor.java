@@ -39,6 +39,9 @@ public class JwtInterceptor implements HandlerInterceptor {
             // 支付宝回调（需外部回调）
             "/alipay/notifyUrl",
             "/alipay/returnUrl",
+            // 首页聚合 & 搜索
+            "/index/data",
+            "/search",
             // 静态资源
             "/uploads"
     );
