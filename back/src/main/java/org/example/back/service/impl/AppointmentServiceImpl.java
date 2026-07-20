@@ -226,6 +226,26 @@ public class AppointmentServiceImpl extends ServiceImpl<AppointmentMapper, Appoi
         }
     }
 
+    @Override
+    public void confirm(Long id, Long userId) {
+        Appointment appointment = this.getById(id);
+        if (appointment == null) {
+            throw new RuntimeException("挂号订单不存在");
+        }
+        if (!appointment.getUserId().equals(userId)) {
+            throw new RuntimeException("无权操作此订单");
+        }
+        if (appointment.getStatus() != 2) {
+            throw new RuntimeException("当前状态不可确认完成");
+        }
+
+        LambdaUpdateWrapper<Appointment> wrapper = new LambdaUpdateWrapper<>();
+        wrapper.eq(Appointment::getId, id)
+               .set(Appointment::getStatus, 3)
+               .set(Appointment::getUpdateTime, LocalDateTime.now());
+        this.update(wrapper);
+    }
+
     private String generateOrderNo() {
         String chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
         StringBuilder sb = new StringBuilder();

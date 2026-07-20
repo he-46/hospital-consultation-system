@@ -57,6 +57,7 @@
             <template #default="{row}">
               <el-button v-if="row.status === 1" type="primary" size="small" @click="handlePay(row)">支付</el-button>
               <el-button v-if="row.status === 1 || row.status === 2" type="warning" size="small" @click="handleCancel(row)">取消</el-button>
+              <el-button v-if="row.status === 2" type="primary" size="small" @click="handleConfirm(row)">确认完成</el-button>
               <el-button v-if="row.status === 4" type="success" size="small" @click="handleReview(row)">评价</el-button>
             </template>
           </el-table-column>
@@ -77,7 +78,7 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import { getConsultList, cancelConsult, payConsult } from '@/api/consult'
+import { getConsultList, cancelConsult, payConsult, confirmConsult } from '@/api/consult'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import Header from '@/components/Header.vue'
 import Footer from '@/components/Footer.vue'
@@ -114,6 +115,17 @@ const handleCancel = async (row) => {
     loadConsultList()
   } catch (err) {
     if (err !== 'cancel') ElMessage.error(err.message || '取消失败')
+  }
+}
+
+const handleConfirm = async (row) => {
+  try {
+    await ElMessageBox.confirm('确认咨询已完成？确认后将可评价。', '提示', { confirmButtonText: '确认完成', cancelButtonText: '取消', type: 'info' })
+    await confirmConsult(row.id)
+    ElMessage.success('已确认完成')
+    loadConsultList()
+  } catch (err) {
+    if (err !== 'cancel') ElMessage.error(err.message || '操作失败')
   }
 }
 

@@ -60,4 +60,11 @@ public class AppointmentController {
         Map<String, Object> data = paymentFlowService.pay(id, request.getPayMethod(), userId);
         return Result.success(data);
     }
+
+    @PutMapping("/{id}/confirm")
+    public Result<?> confirm(@PathVariable Long id, HttpServletRequest httpRequest) {
+        Long userId = (Long) httpRequest.getAttribute("userId");
+        appointmentService.confirm(id, userId);
+        return Result.success("确认完成");
+    }
 }

@@ -165,8 +165,8 @@ public class ConsultServiceImpl extends ServiceImpl<ConsultMapper, Consult> impl
         flow.setCreateTime(now);
         paymentFlowMapper.insert(flow);
 
-        // 更新咨询订单状态为已完成（模拟支付后直接完成）
-        consult.setStatus(ConsultStatusEnum.FINISHED.getCode());
+        // 更新咨询订单状态为已支付（用户需手动确认完成）
+        consult.setStatus(ConsultStatusEnum.PAID.getCode());
         consult.setPayTime(now);
         baseMapper.updateById(consult);
 
@@ -187,5 +187,24 @@ public class ConsultServiceImpl extends ServiceImpl<ConsultMapper, Consult> impl
             sb.append(chars.charAt(random.nextInt(chars.length())));
         }
         return "CONSUL" + System.currentTimeMillis() + sb;
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public void confirmConsult(Long id) {
+        Long userId = UserContext.getUserId();
+        Consult consult = baseMapper.selectById(id);
+        if (consult == null) {
+            throw new BusinessException(40000, "订单不存在");
+        }
+        if (!consult.getUserId().equals(userId)) {
+            throw new BusinessException(40000, "无权操作");
+        }
+        if (!consult.getStatus().equals(ConsultStatusEnum.PAID.getCode())) {
+            throw new BusinessException(40000, "当前状态不可确认完成");
+        }
+        consult.setStatus(ConsultStatusEnum.FINISHED.getCode());
+        consult.setUpdateTime(LocalDateTime.now());
+        baseMapper.updateById(consult);
     }
 }

@@ -30,6 +30,13 @@ export function cancelConsult(id) {
         method: 'put'
     })
 }
+// 确认完成
+export function confirmConsult(id) {
+    return request({
+        url: `/consults/${id}/confirm`,
+        method: 'put'
+    })
+}
 // 支付
 export function payConsult(id, data) {
     return request({

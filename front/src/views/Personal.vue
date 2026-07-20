@@ -110,6 +110,7 @@
               <div class="order-footer" v-if="item.status === 1 || item.status === 2 || item.status === 3">
                 <el-button v-if="item.status === 1" type="primary" size="small" @click="$router.push(`/reservation-pay/${item.id}`)">去支付</el-button>
                 <el-button v-if="item.status === 1 || item.status === 2" type="danger" size="small" @click="handleCancelAppointment(item)">取消</el-button>
+                <el-button v-if="item.status === 2" type="primary" size="small" @click="handleConfirmAppointment(item)">确认完成</el-button>
                 <el-button v-if="item.status === 3" type="success" size="small" @click="$router.push(`/review/${item.id}`)">评价</el-button>
               </div>
             </div>
@@ -152,6 +153,7 @@
               <div class="order-footer" v-if="item.status === 1 || item.status === 2 || item.status === 4">
                 <el-button v-if="item.status === 1" type="primary" size="small" @click="$router.push('/consult-pay/' + item.id)">去支付</el-button>
                 <el-button v-if="item.status === 1 || item.status === 2" type="danger" size="small" @click="handleCancelConsult(item)">取消</el-button>
+                <el-button v-if="item.status === 2" type="primary" size="small" @click="handleConfirmConsult(item)">确认完成</el-button>
                 <el-button v-if="item.status === 4" type="success" size="small" @click="handleReview(item)">评价</el-button>
               </div>
             </div>
@@ -258,8 +260,8 @@ import { ElMessage, ElMessageBox } from 'element-plus'
 import { Plus } from '@element-plus/icons-vue'
 import { getUserInfo, updateUserInfo } from '@/api/user'
 import { uploadAvatar } from '@/api/file'
-import { getAppointmentList, cancelAppointment } from '@/api/appointment'
-import { getConsultList, cancelConsult } from '@/api/consult'
+import { getAppointmentList, cancelAppointment, confirmAppointment } from '@/api/appointment'
+import { getConsultList, cancelConsult, confirmConsult } from '@/api/consult'
 import { getReviewList } from '@/api/review'
 import Header from '@/components/Header.vue'
 import Footer from '@/components/Footer.vue'
@@ -411,6 +413,18 @@ export default {
       }
     }
 
+    // 确认完成咨询
+    const handleConfirmConsult = async (item) => {
+      try {
+        await ElMessageBox.confirm('确认咨询已完成？确认后将可评价。', '提示', { confirmButtonText: '确认完成', cancelButtonText: '取消', type: 'info' })
+        await confirmConsult(item.id)
+        ElMessage.success('已确认完成')
+        loadConsults()
+      } catch (error) {
+        if (error !== 'cancel') ElMessage.error(error?.response?.data?.message || error?.message || '操作失败')
+      }
+    }
+
     // 评价（跳转到统一评价页）
     const handleReview = (item) => {
       router.push(`/review/${item.id}?orderType=2`)
@@ -454,6 +468,18 @@ export default {
         loadAppointments()
       } catch (error) {
         if (error !== 'cancel') console.error(error)
+      }
+    }
+
+    // 确认完成挂号
+    const handleConfirmAppointment = async (item) => {
+      try {
+        await ElMessageBox.confirm('确认已完成就诊？确认后将可评价。', '提示', { confirmButtonText: '确认完成', cancelButtonText: '取消', type: 'info' })
+        await confirmAppointment(item.id)
+        ElMessage.success('已确认完成')
+        loadAppointments()
+      } catch (error) {
+        if (error !== 'cancel') ElMessage.error(error?.response?.data?.message || error?.message || '操作失败')
       }
     }
 
@@ -611,6 +637,8 @@ export default {
       loadReviews,
       handleCancelAppointment,
       handleCancelConsult,
+      handleConfirmAppointment,
+      handleConfirmConsult,
       handleReview,
       getStatusText,
       getStatusClass,

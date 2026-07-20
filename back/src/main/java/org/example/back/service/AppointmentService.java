@@ -12,4 +12,6 @@ public interface AppointmentService {
     Map<String, Object> detail(Long id, Long userId);
 
     void cancel(Long id, Long userId);
+
+    void confirm(Long id, Long userId);
 }

@@ -51,4 +51,10 @@ public class ConsultController {
         Map<String, Object> payInfo = consultService.payConsult(id, dto);
         return Result.success(payInfo);
     }
+
+    @PutMapping("/{id}/confirm")
+    public Result<Void> confirm(@PathVariable Long id){
+        consultService.confirmConsult(id);
+        return Result.success("确认完成", null);
+    }
 }

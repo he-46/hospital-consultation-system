@@ -18,4 +18,6 @@ public interface ConsultService {
     void cancelConsult(Long id);
     // 发起支付
     Map<String, Object> payConsult(Long id, PayConsultDTO dto);
+    // 确认完成
+    void confirmConsult(Long id);
 }

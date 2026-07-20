@@ -43,6 +43,14 @@ export function payAppointment(id, data) {
   })
 }
 
+// 确认完成
+export function confirmAppointment(id) {
+  return request({
+    url: '/appointments/' + id + '/confirm',
+    method: 'put'
+  })
+}
+
 // 支付回调
 export function paymentCallback(orderNo) {
   return request({
