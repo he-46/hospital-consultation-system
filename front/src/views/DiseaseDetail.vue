@@ -55,7 +55,7 @@
 
 <script>
 import { ref, onMounted } from 'vue'
-import { useRoute } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { getDiseaseDetail } from '@/api/disease'
 import { addFollow, delFollow, getFollows, checkFollow } from '@/api/follow'
@@ -67,6 +67,7 @@ export default {
   components: { Header, Footer },
   setup() {
     const route = useRoute()
+    const router = useRouter()
     const disease = ref({})
     const isFollowed = ref(false)
     const myFollowId = ref(null)
@@ -91,6 +92,7 @@ export default {
     }
 
     const loadMyFollowId = async () => {
+      if (!localStorage.getItem('token')) return
       try {
         const res = await getFollows({ page: 1, size: 100, followType: 3 })
         const records = res.data.records || []
@@ -103,7 +105,7 @@ export default {
 
     const handleFollow = async () => {
       if (!localStorage.getItem('token')) {
-        ElMessage.warning('请先登录')
+        router.push('/login?redirect=' + encodeURIComponent(route.fullPath))
         return
       }
       if (isFollowed.value) return // already followed, use unfollow button

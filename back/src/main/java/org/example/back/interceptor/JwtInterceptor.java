@@ -36,13 +36,31 @@ public class JwtInterceptor implements HandlerInterceptor {
             "/user/sendCode",
             "/user/checkCode",
             "/user/resetPassword",
-            // 支付宝回调（需外部回调）
-            "/alipay/notifyUrl",
-            "/alipay/returnUrl",
-            // 首页聚合 & 搜索
-            "/index/data",
+            // 医院浏览
+            "/hospital",
+            // 科室浏览
+            "/department",
+            "/departments",
+            // 医生浏览
+            "/doctors",
+            // 文章科普
+            "/article",
+            // 疾病百科
+            "/disease",
+            // 搜索
             "/search",
-            // 静态资源
+            // 首页
+            "/index",
+            // 系统配置
+            "/config",
+            // 反馈消息
+            "/feedback",
+            "/message",
+            // 支付宝回调
+            "/alipay",
+            "/payment/callback",
+            // 文件上传
+            "/file",
             "/uploads"
     );
 

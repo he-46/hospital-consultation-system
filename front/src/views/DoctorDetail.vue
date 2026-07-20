@@ -124,7 +124,7 @@
 
 <script>
 import { ref, computed, onMounted } from 'vue'
-import { useRoute } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import { getDoctorDetail, getDoctorSchedule, getDoctorReviews } from '@/api/doctor'
 import { getFollows, addFollow, delFollow, checkFollow } from '@/api/follow'
 import { ElMessage } from 'element-plus'
@@ -136,6 +136,7 @@ export default {
   components: { Header, Footer },
   setup() {
     const route = useRoute()
+    const router = useRouter()
     const doctor = ref({})
     const schedules = ref([])
     const reviews = ref([])
@@ -158,6 +159,7 @@ export default {
 
     // 加载当前用户对该医生的关注记录ID
     const loadMyFollowId = async () => {
+      if (!localStorage.getItem('token')) return
       try {
         const res = await getFollows({ page: 1, size: 100, followType: 2 })
         const records = res.data.records || []
@@ -169,6 +171,10 @@ export default {
     }
 
     const handleFollowClick = async () => {
+      if (!localStorage.getItem('token')) {
+        router.push('/login?redirect=' + encodeURIComponent(route.fullPath))
+        return
+      }
       if (isFollow.value) {
         await unfollowDoctor()
       } else {

@@ -67,7 +67,7 @@
 
 <script>
 import { ref, onMounted } from 'vue'
-import { useRoute } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import { getHospitalDetail } from '@/api/hospital'
 import { addFollow, delFollow, getFollows, checkFollow } from '@/api/follow'
 import { ElMessage } from 'element-plus'
@@ -79,6 +79,7 @@ export default {
   components: { Header, Footer },
   setup() {
     const route = useRoute()
+    const router = useRouter()
     const hospital = ref({})
     const departments = ref([])
     const doctors = ref([])
@@ -108,6 +109,7 @@ export default {
     }
 
     const loadMyFollowId = async () => {
+      if (!localStorage.getItem('token')) return
       try {
         const res = await getFollows({ page: 1, size: 100, followType: 1 })
         const records = res.data.records || []
@@ -119,6 +121,10 @@ export default {
     }
 
     const handleFollow = async () => {
+      if (!localStorage.getItem('token')) {
+        router.push('/login?redirect=' + encodeURIComponent(route.fullPath))
+        return
+      }
       if (isFollow.value) {
         // 取消关注
         if (!myFollowId.value) {
