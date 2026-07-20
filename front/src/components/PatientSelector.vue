@@ -126,8 +126,12 @@ const selectMember = (member) => {
 }
 
 const handleAdd = async () => {
-  const valid = await dialogFormRef.value.validate().catch(() => false)
-  if (!valid) return
+  if (!dialogFormRef.value) return
+  try {
+    await dialogFormRef.value.validate()
+  } catch {
+    return
+  }
 
   saving.value = true
   try {
@@ -142,7 +146,6 @@ const handleAdd = async () => {
     const res = await addFamilyMember(payload)
     ElMessage.success('添加成功')
     dialogVisible.value = false
-    // reset form
     form.name = ''
     form.gender = 1
     form.birthday = ''
@@ -150,12 +153,12 @@ const handleAdd = async () => {
     form.idCard = ''
     form.relation = ''
     await fetchMembers()
-    // auto select the new member
     if (res.data) {
       selectedId.value = res.data.id
       emit('select', res.data)
     }
   } catch (e) {
+    ElMessage.error('添加失败，请稍后重试')
     console.error('添加就诊人失败', e)
   } finally {
     saving.value = false

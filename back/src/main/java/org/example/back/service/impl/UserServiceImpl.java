@@ -48,7 +48,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
         }
         
         // 使用MD5+盐码验证密码
-        if(!password.equals(user.getPassword())){
+        if(!PasswordUtil.verifyStoredPassword(password, user.getPassword())){
             throw new RuntimeException("密码错误");
         }
         
