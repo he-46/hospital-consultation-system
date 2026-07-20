@@ -70,9 +70,6 @@ public class WebConfig implements WebMvcConfigurer {
                         "/index/**",
                         // 系统配置
                         "/config/**",
-                        // 反馈消息
-                        "/feedback/**",
-                        "/message/**",
                         // 支付宝回调（需外部回调）
                         "/alipay/**",
                         "/payment/callback",

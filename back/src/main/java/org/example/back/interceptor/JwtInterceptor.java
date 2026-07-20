@@ -80,9 +80,6 @@ public class JwtInterceptor implements HandlerInterceptor {
             "/disease",
             // 首页
             "/index",
-            // 反馈消息
-            "/feedback",
-            "/message",
             // 支付宝回调
             "/alipay",
             "/file",
