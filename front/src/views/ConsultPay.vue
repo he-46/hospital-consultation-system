@@ -132,7 +132,8 @@ const handlePay = async () => {
   loading.value = true
   try {
     if (payMethod.value === 1) {
-      // 支付宝支付：解析返回的HTML表单，提交到新窗口
+      // 支付宝支付：先开窗口（在用户手势中），再请求接口
+      payWindow = window.open('', 'alipayPayWindow')
       const res = await alipayPay({
         widout_trade_no: order.value.orderNo,
         widtotal_amount: String(order.value.amount || 0),
@@ -143,7 +144,6 @@ const handlePay = async () => {
       tempDiv.innerHTML = res.data
       const form = tempDiv.querySelector('form')
       if (form) {
-        payWindow = window.open('', 'alipayPayWindow')
         form.target = 'alipayPayWindow'
         form.style.display = 'none'
         document.body.appendChild(form)
@@ -151,7 +151,7 @@ const handlePay = async () => {
         document.body.removeChild(form)
         pollPaymentStatus()
       } else {
-        payWindow = window.open(URL.createObjectURL(new Blob([res.data], { type: 'text/html' })), '_blank')
+        payWindow.location.href = URL.createObjectURL(new Blob([res.data], { type: 'text/html' }))
       }
     } else {
       // 微信支付（模拟）

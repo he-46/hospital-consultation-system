@@ -30,7 +30,15 @@ public class MessageController {
 
     // 标记为已读
     @PutMapping("/{id}/read")
-    public Result<String> markRead(@PathVariable Long id) {
+    public Result<String> markRead(@PathVariable Long id, HttpServletRequest request) {
+        Long userId = (Long) request.getAttribute("userId");
+        Message message = messageService.getById(id);
+        if (message == null) {
+            return Result.error("消息不存在");
+        }
+        if (!message.getUserId().equals(userId)) {
+            return Result.error("无权操作");
+        }
         messageService.markRead(id);
         return Result.success("已标记为已读");
     }

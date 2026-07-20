@@ -13,16 +13,16 @@
       </div>
 
       <div v-if="list.length === 0" class="empty">暂无消息</div>
-      <div v-for="item in list" :key="item.id" class="card message-item" :class="{ unread: item.isRead === 0 }">
+      <div v-for="item in list" :key="item.id" class="card message-item"
+           :class="{ unread: item.isRead === 0 }"
+           @click="handleClick(item)">
         <div class="message-title">
           <span v-if="item.isRead === 0" class="unread-dot"></span>
+          <span v-else class="read-dot"></span>
           {{ item.title }}
           <span class="time">{{ item.createTime }}</span>
         </div>
         <div class="message-content">{{ item.content }}</div>
-        <el-button v-if="item.isRead === 0" type="primary" size="small" @click="markRead(item.id)">
-          标记已读
-        </el-button>
       </div>
 
       <el-pagination
@@ -43,7 +43,6 @@ import { ref, onMounted } from 'vue'
 import request from '@/api/index'
 import Header from '@/components/Header.vue'
 import Footer from '@/components/Footer.vue'
-import { ElMessage } from 'element-plus'
 
 export default {
   name: 'Messages',
@@ -65,13 +64,22 @@ export default {
 
     const markRead = async (id) => {
       await request.put(`/message/${id}/read`)
-      ElMessage.success('已标记为已读')
-      loadList()
+    }
+
+    const handleClick = async (item) => {
+      if (item.isRead === 0) {
+        try {
+          await markRead(item.id)
+          item.isRead = 1
+        } catch (e) {
+          // 忽略
+        }
+      }
     }
 
     onMounted(() => loadList())
 
-    return { list, filter, pageNum, pageSize, total, loadList, markRead }
+    return { list, filter, pageNum, pageSize, total, loadList, handleClick }
   }
 }
 </script>
@@ -81,10 +89,13 @@ export default {
 .container { width: 800px; margin: 0 auto; padding: 30px 0; }
 .page-title { font-size: 24px; font-weight: bold; margin-bottom: 20px; }
 .card { background: #fff; border-radius: 8px; padding: 20px; margin-bottom: 15px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); }
-.message-item.unread { border-left: 4px solid #1e88e5; }
+.message-item { cursor: pointer; transition: background-color 0.3s; }
+.message-item:hover { background: #fafbfc; }
+.message-item.unread { border-left: 4px solid #1e88e5; background: #f0f7ff; }
 .message-title { font-size: 16px; font-weight: bold; display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
 .message-title .time { color: #999; font-size: 13px; margin-left: auto; }
-.message-content { color: #666; margin-bottom: 10px; }
+.message-content { color: #666; }
 .unread-dot { width: 8px; height: 8px; background: #f44336; border-radius: 50%; flex-shrink: 0; }
+.read-dot { width: 8px; height: 8px; background: transparent; border-radius: 50%; flex-shrink: 0; }
 .empty { text-align: center; color: #999; padding: 60px; }
 </style>

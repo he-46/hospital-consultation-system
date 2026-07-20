@@ -47,7 +47,10 @@
                 <el-dropdown-item command="appointments">我的挂号</el-dropdown-item>
                 <el-dropdown-item command="consults">我的咨询</el-dropdown-item>
                 <el-dropdown-item command="feedback">我的反馈</el-dropdown-item>
-                <el-dropdown-item command="messages">我的消息</el-dropdown-item>
+                <el-dropdown-item command="messages">
+                  我的消息
+                  <el-badge :value="unreadCount" :hidden="unreadCount === 0" :max="99" class="msg-badge" />
+                </el-dropdown-item>
                 <el-dropdown-item divided command="logout">退出登录</el-dropdown-item>
               </el-dropdown-menu>
             </template>
@@ -62,6 +65,7 @@
 import { ref, computed, onMounted, watch } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import axios from 'axios'
+import request from '@/api/index'
 
 export default {
   name: 'Header',
@@ -84,6 +88,23 @@ export default {
       return avatar
     })
     
+    const unreadCount = ref(0)
+
+    const fetchUnreadCount = async () => {
+      if (!isLoggedIn.value) {
+        unreadCount.value = 0
+        return
+      }
+      try {
+        const res = await request.get('/message/unread/count')
+        if (res.code === 200) {
+          unreadCount.value = res.data || 0
+        }
+      } catch (e) {
+        // 忽略
+      }
+    }
+
     const loadUserInfo = () => {
       const stored = localStorage.getItem('userInfo')
       if (stored) {
@@ -101,11 +122,13 @@ export default {
     
     onMounted(() => {
       loadUserInfo()
+      fetchUnreadCount()
     })
-    
-    // 监听路由变化，切换页面时重新加载用户信息
+
+    // 监听路由变化，切换页面时重新加载用户信息和未读数
     watch(() => route.path, () => {
       loadUserInfo()
+      fetchUnreadCount()
     })
     
     const handleSearch = () => {
@@ -149,6 +172,7 @@ export default {
       userInfo,
       isLoggedIn,
       avatarSrc,
+      unreadCount,
       handleSearch,
       handleCommand
     }
@@ -261,6 +285,13 @@ export default {
         font-size: 14px;
       }
     }
+  }
+}
+
+.msg-badge {
+  margin-left: 8px;
+  :deep(.el-badge__content) {
+    font-size: 11px;
   }
 }
 </style>
