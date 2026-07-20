@@ -411,9 +411,9 @@ export default {
       }
     }
 
-    // 评价（跳转到评价页）
+    // 评价（跳转到统一评价页）
     const handleReview = (item) => {
-      router.push({ path: '/my/review', query: { orderType: 2, orderId: item.id, doctorId: item.doctorId } })
+      router.push(`/review/${item.id}?orderType=2`)
     }
 
     // 加载我的评价
