@@ -98,9 +98,8 @@ const handlePay = async () => {
         widsubject: '电话咨询-' + order.value.doctorName,
         widbody: '咨询人：' + order.value.patientName
       })
-      const payWindow = window.open('', '_blank')
-      payWindow.document.write(res.data)
-      payWindow.document.close()
+      document.write(res.data)
+      document.close()
     } else {
       // 微信支付（模拟）
       const res = await payConsult(route.params.id, { payType: payMethod.value })

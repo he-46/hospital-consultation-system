@@ -100,9 +100,8 @@ export default {
             widsubject: '挂号预约-' + order.value.doctorName,
             widbody: '就诊人：' + order.value.patientName
           })
-          const payWindow = window.open('', '_blank')
-          payWindow.document.write(res.data)
-          payWindow.document.close()
+          document.write(res.data)
+          document.close()
         } else {
           // 微信支付（模拟）
           await payAppointment(route.params.id, { payMethod: payMethod.value })
