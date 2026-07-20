@@ -7,10 +7,12 @@ import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import org.example.back.dto.AppointmentCreateRequest;
 import org.example.back.entity.Appointment;
 import org.example.back.entity.Doctor;
+import org.example.back.entity.Review;
 import org.example.back.entity.Schedule;
 import org.example.back.mapper.AppointmentMapper;
 import org.example.back.mapper.DoctorMapper;
 import org.example.back.mapper.HospitalMapper;
+import org.example.back.mapper.ReviewMapper;
 import org.example.back.mapper.ScheduleMapper;
 import org.example.back.service.AppointmentService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -19,9 +21,8 @@ import org.springframework.stereotype.Service;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Random;
+import java.util.*;
+import java.util.stream.Collectors;
 
 @Service
 public class AppointmentServiceImpl extends ServiceImpl<AppointmentMapper, Appointment> implements AppointmentService {
@@ -34,6 +35,9 @@ public class AppointmentServiceImpl extends ServiceImpl<AppointmentMapper, Appoi
 
     @Autowired
     private HospitalMapper hospitalMapper;
+
+    @Autowired
+    private ReviewMapper reviewMapper;
 
     @Override
     public Map<String, Object> create(AppointmentCreateRequest request, Long userId) {
@@ -145,6 +149,24 @@ public class AppointmentServiceImpl extends ServiceImpl<AppointmentMapper, Appoi
             item.put("hospitalName", hospitalMap.getOrDefault(a.getHospitalId(), null));
 
             records.add(item);
+        }
+
+        // 批量查询已评价订单，设置 hasReview 标记
+        if (!records.isEmpty()) {
+            List<Long> apptIds = result.getRecords().stream()
+                    .map(Appointment::getId).collect(Collectors.toList());
+            Set<Long> reviewedIds = new HashSet<>();
+            List<Review> reviews = reviewMapper.selectList(
+                    new LambdaQueryWrapper<Review>()
+                            .eq(Review::getOrderType, 1)
+                            .in(Review::getOrderId, apptIds));
+            for (Review r : reviews) {
+                reviewedIds.add(r.getOrderId());
+            }
+            for (Map<String, Object> item : records) {
+                Long id = Long.valueOf((String) item.get("id"));
+                item.put("hasReview", reviewedIds.contains(id));
+            }
         }
 
         Map<String, Object> map = new HashMap<>();

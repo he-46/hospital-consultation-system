@@ -37,4 +37,6 @@ public class Consult {
     private String doctorTitle;
     @TableField(exist = false)
     private String hospitalName;
+    @TableField(exist = false)
+    private Boolean hasReview;
 }

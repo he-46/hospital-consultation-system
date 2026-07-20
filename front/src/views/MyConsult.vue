@@ -58,7 +58,8 @@
               <el-button v-if="row.status === 1" type="primary" size="small" @click="handlePay(row)">支付</el-button>
               <el-button v-if="row.status === 1 || row.status === 2" type="warning" size="small" @click="handleCancel(row)">取消</el-button>
               <el-button v-if="row.status === 2" type="primary" size="small" @click="handleConfirm(row)">确认完成</el-button>
-              <el-button v-if="row.status === 4" type="success" size="small" @click="handleReview(row)">评价</el-button>
+              <el-button v-if="row.status === 4 && !row.hasReview" type="success" size="small" @click="handleReview(row)">评价</el-button>
+              <el-button v-if="row.status === 4 && row.hasReview" type="info" size="small" @click="handleAlreadyReviewed">已评价</el-button>
             </template>
           </el-table-column>
         </el-table>
@@ -137,6 +138,10 @@ const handlePay = async (row) => {
   } catch (err) {
     ElMessage.error(err.message || '支付失败')
   }
+}
+
+const handleAlreadyReviewed = () => {
+  ElMessage.warning('已评价，不可重复操作')
 }
 
 const handleReview = (row) => {

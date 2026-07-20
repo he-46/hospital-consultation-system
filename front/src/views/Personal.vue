@@ -111,7 +111,8 @@
                 <el-button v-if="item.status === 1" type="primary" size="small" @click="$router.push(`/reservation-pay/${item.id}`)">去支付</el-button>
                 <el-button v-if="item.status === 1 || item.status === 2" type="danger" size="small" @click="handleCancelAppointment(item)">取消</el-button>
                 <el-button v-if="item.status === 2" type="primary" size="small" @click="handleConfirmAppointment(item)">确认完成</el-button>
-                <el-button v-if="item.status === 3" type="success" size="small" @click="$router.push(`/review/${item.id}`)">评价</el-button>
+                <el-button v-if="item.status === 3 && !item.hasReview" type="success" size="small" @click="$router.push(`/review/${item.id}`)">评价</el-button>
+                <el-button v-if="item.status === 3 && item.hasReview" type="info" size="small" @click="handleAlreadyReviewed">已评价</el-button>
               </div>
             </div>
             <el-pagination
@@ -154,7 +155,8 @@
                 <el-button v-if="item.status === 1" type="primary" size="small" @click="$router.push('/consult-pay/' + item.id)">去支付</el-button>
                 <el-button v-if="item.status === 1 || item.status === 2" type="danger" size="small" @click="handleCancelConsult(item)">取消</el-button>
                 <el-button v-if="item.status === 2" type="primary" size="small" @click="handleConfirmConsult(item)">确认完成</el-button>
-                <el-button v-if="item.status === 4" type="success" size="small" @click="handleReview(item)">评价</el-button>
+                <el-button v-if="item.status === 4 && !item.hasReview" type="success" size="small" @click="handleReview(item)">评价</el-button>
+                <el-button v-if="item.status === 4 && item.hasReview" type="info" size="small" @click="handleAlreadyReviewed">已评价</el-button>
               </div>
             </div>
             <el-pagination
@@ -425,6 +427,11 @@ export default {
       }
     }
 
+    // 已评价提示
+    const handleAlreadyReviewed = () => {
+      ElMessage.warning('已评价，不可重复操作')
+    }
+
     // 评价（跳转到统一评价页）
     const handleReview = (item) => {
       router.push(`/review/${item.id}?orderType=2`)
@@ -639,6 +646,7 @@ export default {
       handleCancelConsult,
       handleConfirmAppointment,
       handleConfirmConsult,
+      handleAlreadyReviewed,
       handleReview,
       getStatusText,
       getStatusClass,

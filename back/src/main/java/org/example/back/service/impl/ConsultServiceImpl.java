@@ -13,10 +13,12 @@ import org.example.back.entity.Consult;
 import org.example.back.entity.Doctor;
 import org.example.back.entity.Hospital;
 import org.example.back.entity.PaymentFlow;
+import org.example.back.entity.Review;
 import org.example.back.mapper.ConsultMapper;
 import org.example.back.mapper.DoctorMapper;
 import org.example.back.mapper.HospitalMapper;
 import org.example.back.mapper.PaymentFlowMapper;
+import org.example.back.mapper.ReviewMapper;
 import org.example.back.service.ConsultService;
 import org.example.back.service.MessageService;
 import org.springframework.stereotype.Service;
@@ -24,10 +26,8 @@ import org.springframework.transaction.annotation.Transactional;
 import javax.annotation.Resource;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Random;
-import java.util.UUID;
+import java.util.*;
+import java.util.stream.Collectors;
 
 @Service
 public class ConsultServiceImpl extends ServiceImpl<ConsultMapper, Consult> implements ConsultService {
@@ -43,6 +43,9 @@ public class ConsultServiceImpl extends ServiceImpl<ConsultMapper, Consult> impl
 
     @Resource
     private MessageService messageService;
+
+    @Resource
+    private ReviewMapper reviewMapper;
 
     @Override
     @Transactional(rollbackFor = Exception.class)
@@ -79,7 +82,26 @@ public class ConsultServiceImpl extends ServiceImpl<ConsultMapper, Consult> impl
     public IPage<Consult> getMyConsultPage(Long page, Long size, Integer status) {
         Long userId = UserContext.getUserId();
         Page<Consult> pageObj = new Page<>(page, size);
-        return baseMapper.selectConsultPage(pageObj, userId, status);
+        IPage<Consult> result = baseMapper.selectConsultPage(pageObj, userId, status);
+
+        // 批量查询已评价订单，设置 hasReview 标记
+        List<Consult> records = result.getRecords();
+        if (!records.isEmpty()) {
+            List<Long> consultIds = records.stream()
+                    .map(Consult::getId).collect(Collectors.toList());
+            Set<Long> reviewedIds = new HashSet<>();
+            List<Review> reviews = reviewMapper.selectList(
+                    Wrappers.<Review>lambdaQuery()
+                            .eq(Review::getOrderType, 2)
+                            .in(Review::getOrderId, consultIds));
+            for (Review r : reviews) {
+                reviewedIds.add(r.getOrderId());
+            }
+            for (Consult c : records) {
+                c.setHasReview(reviewedIds.contains(c.getId()));
+            }
+        }
+        return result;
     }
 
     @Override
