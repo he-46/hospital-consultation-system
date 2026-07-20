@@ -58,7 +58,8 @@
             <div class="code-actions">
               <el-button 
                 size="large" 
-                :disabled="countdown > 0"
+                :disabled="countdown > 0 || sendingCode"
+                :loading="sendingCode"
                 @click="handleSendCode"
               >
                 {{ countdown > 0 ? `${countdown}秒后可重发` : '获取验证码' }}
@@ -205,6 +206,9 @@ export default {
       ]
     }
     
+    // 发送验证码中
+    const sendingCode = ref(false)
+    
     // 验证手机号
     const handleVerifyPhone = async () => {
       if (!phoneFormRef.value) return
@@ -215,8 +219,8 @@ export default {
           try {
             await verifyPhone(phoneForm.phone)
             step.value = 1
-            // 自动发送验证码
-            handleSendCode()
+            // 自动发送验证码（等待完成）
+            await handleSendCode()
           } catch (error) {
             console.error(error)
           } finally {
@@ -228,6 +232,10 @@ export default {
     
     // 发送验证码
     const handleSendCode = async () => {
+      // 防止重复点击
+      if (sendingCode.value || countdown.value > 0) return
+      
+      sendingCode.value = true
       try {
         await sendCode(phoneForm.phone)
         ElMessage.success('验证码已发送，请注意查收')
@@ -242,6 +250,8 @@ export default {
       } catch (error) {
         console.error(error)
         ElMessage.error(error.message || '验证码发送失败')
+      } finally {
+        sendingCode.value = false
       }
     }
     
