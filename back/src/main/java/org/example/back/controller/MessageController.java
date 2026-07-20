@@ -16,21 +16,30 @@ public class MessageController {
     @Autowired
     private MessageService messageService;
 
-    // 消息列表：GET /message/list?pageNum=1&pageSize=10&isRead=0
+    // 获取我的消息列表
     @GetMapping("/list")
-    public Result<?> list(HttpServletRequest request,
-                          @RequestParam(defaultValue = "1") Integer pageNum,
-                          @RequestParam(defaultValue = "10") Integer pageSize,
-                          @RequestParam(required = false) Integer isRead) {
+    public Result<Page<Message>> list(
+            @RequestParam(defaultValue = "1") int pageNum,
+            @RequestParam(defaultValue = "10") int pageSize,
+            @RequestParam(required = false) Integer isRead,
+            HttpServletRequest request) {
         Long userId = (Long) request.getAttribute("userId");
-        Page<Message> page = messageService.getList(pageNum, pageSize, userId, isRead);
+        Page<Message> page = messageService.pageByUser(pageNum, pageSize, userId, isRead);
         return Result.success(page);
     }
 
-    // 标记已读：PUT /message/1/read
+    // 标记为已读
     @PutMapping("/{id}/read")
-    public Result<?> markRead(@PathVariable Long id) {
+    public Result<String> markRead(@PathVariable Long id) {
         messageService.markRead(id);
         return Result.success("已标记为已读");
+    }
+
+    // 获取未读消息数量
+    @GetMapping("/unread/count")
+    public Result<Long> unreadCount(HttpServletRequest request) {
+        Long userId = (Long) request.getAttribute("userId");
+        long count = messageService.countUnread(userId);
+        return Result.success(count);
     }
 }
