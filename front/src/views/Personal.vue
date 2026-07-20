@@ -233,7 +233,7 @@
           <div v-else-if="activeTab === 'feedback'" class="feedback-form">
             <el-form :model="feedbackForm" label-width="100px">
               <el-form-item label="反馈类型">
-                <el-select v-model="feedbackForm.type">
+                <el-select v-model="feedbackForm.feedbackType" placeholder="请选择">
                   <el-option label="系统问题" :value="1" />
                   <el-option label="服务问题" :value="2" />
                   <el-option label="医生问题" :value="3" />
@@ -268,6 +268,7 @@ import { getReviewList } from '@/api/review'
 import Header from '@/components/Header.vue'
 import Footer from '@/components/Footer.vue'
 import { getFollows, delFollow } from '@/api/follow'
+import request from '@/api/index'
 
 export default {
   name: 'Personal',
@@ -306,7 +307,7 @@ export default {
     const followHospitals = ref([])
     const followDiseases = ref([])
     const reviews = ref([])
-    const feedbackForm = ref({ type: 1, content: '' })
+    const feedbackForm = ref({ feedbackType: null, content: '' })
     
     const orderMenu = [
       { key: 'appointments', name: '我的挂号' },
@@ -319,7 +320,7 @@ export default {
       { key: 'followHospitals', name: '关注的医院', link: '/follow/hospital' },
       { key: 'followDiseases', name: '关注的疾病', link: '/follow/disease' },
       { key: 'reviews', name: '我的评价', link: '/my/review' },
-      { key: 'feedback', name: '意见反馈' }
+      { key: 'feedback', name: '意见反馈', link: '/feedback' }
     ]
     
     const menuMap = [...orderMenu, ...myMenu]
@@ -562,13 +563,25 @@ export default {
       }
     }
     
-    const submitFeedback = () => {
+    const submitFeedback = async () => {
+      if (!feedbackForm.value.feedbackType) {
+        ElMessage.warning('请选择反馈类型')
+        return
+      }
       if (!feedbackForm.value.content) {
         ElMessage.warning('请输入反馈内容')
         return
       }
-      ElMessage.success('反馈已提交')
-      feedbackForm.value = { type: 1, content: '' }
+      try {
+        await request.post('/feedback/submit', {
+          feedbackType: feedbackForm.value.feedbackType,
+          content: feedbackForm.value.content
+        })
+        ElMessage.success('反馈已提交')
+        feedbackForm.value = { feedbackType: null, content: '' }
+      } catch (err) {
+        console.error(err)
+      }
     }
     
     const getStatusText = (status) => {
