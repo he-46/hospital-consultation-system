@@ -18,6 +18,7 @@ import org.example.back.mapper.DoctorMapper;
 import org.example.back.mapper.HospitalMapper;
 import org.example.back.mapper.PaymentFlowMapper;
 import org.example.back.service.ConsultService;
+import org.example.back.service.MessageService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import javax.annotation.Resource;
@@ -39,6 +40,9 @@ public class ConsultServiceImpl extends ServiceImpl<ConsultMapper, Consult> impl
 
     @Resource
     private PaymentFlowMapper paymentFlowMapper;
+
+    @Resource
+    private MessageService messageService;
 
     @Override
     @Transactional(rollbackFor = Exception.class)
@@ -169,6 +173,17 @@ public class ConsultServiceImpl extends ServiceImpl<ConsultMapper, Consult> impl
         consult.setStatus(ConsultStatusEnum.PAID.getCode());
         consult.setPayTime(now);
         baseMapper.updateById(consult);
+
+        try {
+            messageService.sendSystemMsg(consult.getUserId(),
+                "电话咨询预约成功",
+                "您已成功预约电话咨询。咨询人：" + consult.getPatientName()
+                    + "，咨询费：¥" + consult.getAmount()
+                    + "，订单号：" + consult.getOrderNo()
+                    + "。请保持电话畅通。");
+        } catch (Exception e) {
+            // 消息发送失败不影响支付流程
+        }
 
         // 返回支付结果
         Map<String, Object> result = new HashMap<>();

@@ -14,6 +14,9 @@ public class FeedbackServiceImpl extends ServiceImpl<FeedbackMapper, Feedback> i
 
     @Override
     public boolean submit(Feedback feedback) {
+        if (feedback.getUserId() == null) {
+            throw new RuntimeException("请先登录");
+        }
         feedback.setStatus(1);                    // 初始状态：待处理
         feedback.setCreateTime(LocalDateTime.now());
         return save(feedback);

@@ -11,6 +11,7 @@ import org.example.back.mapper.AppointmentMapper;
 import org.example.back.mapper.ConsultMapper;
 import org.example.back.mapper.PaymentFlowMapper;
 import org.example.back.mapper.ScheduleMapper;
+import org.example.back.service.MessageService;
 import org.example.back.service.PaymentFlowService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -32,6 +33,9 @@ public class PaymentFlowServiceImpl extends ServiceImpl<PaymentFlowMapper, Payme
 
     @Autowired
     private ScheduleMapper scheduleMapper;
+
+    @Autowired
+    private MessageService messageService;
 
     @Override
     public void createByOrderNo(String orderNo) {
@@ -165,6 +169,17 @@ public class PaymentFlowServiceImpl extends ServiceImpl<PaymentFlowMapper, Payme
                         .set(Consult::getUpdateTime, now);
             consultMapper.update(null, consultUpdate);
 
+            try {
+                messageService.sendSystemMsg(consult.getUserId(),
+                    "电话咨询预约成功",
+                    "您已成功预约电话咨询。咨询人：" + consult.getPatientName()
+                        + "，咨询费：¥" + consult.getAmount()
+                        + "，订单号：" + orderNo
+                        + "。请保持电话畅通。");
+            } catch (Exception e) {
+                // 消息发送失败不影响支付流程
+            }
+
             Map<String, Object> result = new HashMap<>();
             result.put("orderNo", orderNo);
             result.put("thirdPartyTradeNo", thirdPartyTradeNo);
@@ -207,6 +222,18 @@ public class PaymentFlowServiceImpl extends ServiceImpl<PaymentFlowMapper, Payme
                   .set(Appointment::getPayTime, now)
                   .set(Appointment::getUpdateTime, now);
         appointmentMapper.update(null, apptUpdate);
+
+        try {
+            messageService.sendSystemMsg(appointment.getUserId(),
+                "挂号预约成功",
+                "您已成功预约挂号。就诊人：" + appointment.getPatientName()
+                    + "，就诊时间：" + appointment.getAppointmentDate() + " " + appointment.getAppointmentTime()
+                    + "，挂号费：¥" + appointment.getAmount()
+                    + "，订单号：" + orderNo
+                    + "。请按时就诊。");
+        } catch (Exception e) {
+            // 消息发送失败不影响支付流程
+        }
 
         Map<String, Object> result = new HashMap<>();
         result.put("orderNo", orderNo);
