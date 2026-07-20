@@ -69,13 +69,24 @@ const loading = ref(false)
 const payMethod = ref(1)
 const order = ref({})
 let pollTimer = null
+let payWindow = null
+let navigated = false
+
+const goSuccess = (id, orderNo, tradeNo) => {
+  if (navigated) return
+  navigated = true
+  if (payWindow && !payWindow.closed) {
+    payWindow.close()
+  }
+  router.push(`/consult-success/${id}?orderNo=${orderNo || ''}&tradeNo=${tradeNo || ''}`)
+}
 
 const pollPaymentStatus = () => {
   const consultId = route.params.id
   if (!consultId || consultId === 'undefined') return
-  if (pollTimer) clearInterval(pollTimer) // 防止重复创建定时器
+  if (pollTimer) clearInterval(pollTimer)
   let count = 0
-  const maxCount = 60 // 最多轮询2分钟
+  const maxCount = 60
   pollTimer = setInterval(async () => {
     count++
     if (count > maxCount) {
@@ -87,11 +98,10 @@ const pollPaymentStatus = () => {
       const res = await getConsultDetail(consultId)
       if (res.code === 200 && res.data) {
         const status = res.data.status
-        console.log('轮询支付状态:', status, typeof status)
         if (status == 2 || status == 4) {
           clearInterval(pollTimer)
           pollTimer = null
-          router.push(`/consult-success/${consultId}?orderNo=${res.data.orderNo || ''}`)
+          goSuccess(consultId, res.data.orderNo || '', '')
         }
       }
     } catch (e) {
@@ -133,15 +143,15 @@ const handlePay = async () => {
       tempDiv.innerHTML = res.data
       const form = tempDiv.querySelector('form')
       if (form) {
+        payWindow = window.open('', 'alipayPayWindow')
         form.target = 'alipayPayWindow'
         form.style.display = 'none'
         document.body.appendChild(form)
         form.submit()
         document.body.removeChild(form)
-        pollPaymentStatus() // 开始轮询支付状态
+        pollPaymentStatus()
       } else {
-        const blob = new Blob([res.data], { type: 'text/html' })
-        window.open(URL.createObjectURL(blob), '_blank')
+        payWindow = window.open(URL.createObjectURL(new Blob([res.data], { type: 'text/html' })), '_blank')
       }
     } else {
       // 微信支付（模拟）
@@ -161,10 +171,9 @@ const handlePay = async () => {
 
 const handlePayMessage = (event) => {
   if (event.data && event.data.type === 'PAY_SUCCESS') {
-    // 优先用后端返回的 orderId，兜底用 route params
     const id = event.data.orderId || route.params.id
     if (!id || id === 'undefined') return
-    router.push(`/consult-success/${id}?orderNo=${event.data.orderNo}&tradeNo=${event.data.tradeNo || ''}`)
+    goSuccess(id, event.data.orderNo, event.data.tradeNo || '')
   }
 }
 
@@ -178,6 +187,9 @@ onUnmounted(() => {
   if (pollTimer) {
     clearInterval(pollTimer)
     pollTimer = null
+  }
+  if (payWindow && !payWindow.closed) {
+    payWindow.close()
   }
 })
 </script>

@@ -100,6 +100,17 @@ export default {
     }
 
     onMounted(() => {
+      // 如果在弹窗中，通知父窗口并关闭自己
+      if (window.opener) {
+        window.opener.postMessage({
+          type: 'PAY_SUCCESS',
+          orderId: route.params.id,
+          orderNo: orderNo.value,
+          tradeNo: tradeNo.value
+        }, window.location.origin)
+        window.close()
+        return
+      }
       loadOrder()
     })
 

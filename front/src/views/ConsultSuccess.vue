@@ -76,6 +76,19 @@ const order = ref({})
 onMounted(async () => {
   const id = route.params.id
   if (!id || id === 'undefined') return
+
+  // 如果在弹窗中，通知父窗口并关闭自己
+  if (window.opener) {
+    window.opener.postMessage({
+      type: 'PAY_SUCCESS',
+      orderId: id,
+      orderNo: orderNo.value,
+      tradeNo: tradeNo.value
+    }, window.location.origin)
+    window.close()
+    return
+  }
+
   try {
     const res = await getConsultDetail(id)
     const data = res.data || {}

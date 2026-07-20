@@ -73,13 +73,24 @@ export default {
     const payMethod = ref(1)
     const order = ref({})
     let pollTimer = null
+    let payWindow = null
+    let navigated = false
+
+    const goSuccess = (id, orderNo, tradeNo) => {
+      if (navigated) return
+      navigated = true
+      if (payWindow && !payWindow.closed) {
+        payWindow.close()
+      }
+      router.push(`/reservation-success/${id}?orderNo=${orderNo || ''}&tradeNo=${tradeNo || ''}`)
+    }
 
     const pollPaymentStatus = () => {
       const apptId = route.params.id
       if (!apptId || apptId === 'undefined') return
-      if (pollTimer) clearInterval(pollTimer) // 防止重复创建定时器
+      if (pollTimer) clearInterval(pollTimer)
       let count = 0
-      const maxCount = 60 // 最多轮询2分钟
+      const maxCount = 60
       pollTimer = setInterval(async () => {
         count++
         if (count > maxCount) {
@@ -92,11 +103,10 @@ export default {
           if (res.code === 200 && res.data) {
             const appt = res.data.appointment || res.data
             const status = appt.status
-            console.log('轮询支付状态:', status, typeof status)
             if (status == 2) {
               clearInterval(pollTimer)
               pollTimer = null
-              router.push(`/reservation-success/${apptId}?orderNo=${appt.orderNo || ''}`)
+              goSuccess(apptId, appt.orderNo || '', '')
             }
           }
         } catch (e) {
@@ -136,15 +146,15 @@ export default {
           tempDiv.innerHTML = res.data
           const form = tempDiv.querySelector('form')
           if (form) {
+            payWindow = window.open('', 'alipayPayWindow')
             form.target = 'alipayPayWindow'
             form.style.display = 'none'
             document.body.appendChild(form)
             form.submit()
             document.body.removeChild(form)
-            pollPaymentStatus() // 开始轮询支付状态
+            pollPaymentStatus()
           } else {
-            const blob = new Blob([res.data], { type: 'text/html' })
-            window.open(URL.createObjectURL(blob), '_blank')
+            payWindow = window.open(URL.createObjectURL(new Blob([res.data], { type: 'text/html' })), '_blank')
           }
         } else {
           // 微信支付（模拟）
@@ -164,7 +174,7 @@ export default {
       if (event.data && event.data.type === 'PAY_SUCCESS') {
         const id = event.data.orderId || route.params.id
         if (!id || id === 'undefined') return
-        router.push(`/reservation-success/${id}?orderNo=${event.data.orderNo}&tradeNo=${event.data.tradeNo || ''}`)
+        goSuccess(id, event.data.orderNo, event.data.tradeNo || '')
       }
     }
 
@@ -178,6 +188,9 @@ export default {
       if (pollTimer) {
         clearInterval(pollTimer)
         pollTimer = null
+      }
+      if (payWindow && !payWindow.closed) {
+        payWindow.close()
       }
     })
 
