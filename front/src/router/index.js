@@ -153,6 +153,12 @@ const routes = [
     name: 'MyConsult',
     component: () => import('@/views/MyConsult.vue'),
     meta: { requiresAuth: true }
+  },
+  {
+    path: '/review/:id',
+    name: 'Review',
+    component: () => import('@/views/Review.vue'),
+    meta: { requiresAuth: true }
   }
 ]
 

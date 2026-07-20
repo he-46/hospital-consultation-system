@@ -48,19 +48,33 @@ public class WebConfig implements WebMvcConfigurer {
                 .excludePathPatterns(
                         "/user/login",
                         "/user/register",
-                        "/config/**",
+                        "/user/sendRegisterCode",
+                        "/user/verifyPhone",
+                        "/user/sendCode",
+                        "/user/checkCode",
+                        "/user/resetPassword",
+                        // 医院浏览
                         "/hospital/**",
+                        // 科室浏览
                         "/department/**",
-                        "/doctor/**",
+                        "/departments/**",
+                        // 医生浏览
                         "/doctors/**",
-                        "/schedule/**",
+                        // 文章科普
                         "/article/**",
+                        // 疾病百科
                         "/disease/**",
-                        "/schedule/**",
+                        // 搜索
                         "/search/**",
+                        // 首页
                         "/index/**",
-                        "/alipay/notifyUrl",
-                        "/alipay/returnUrl",
+                        // 系统配置
+                        "/config/**",
+                        // 反馈消息
+                        "/feedback/**",
+                        "/message/**",
+                        // 支付宝回调（需外部回调）
+                        "/alipay/**",
                         "/payment/callback",
                         "/file/**",
                         "/uploads/**"
