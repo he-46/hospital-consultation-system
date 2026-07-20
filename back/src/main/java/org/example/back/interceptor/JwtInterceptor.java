@@ -26,9 +26,9 @@ public class JwtInterceptor implements HandlerInterceptor {
     @Value("${jwt.secret}")
     private String secret;
 
-    // 不需要认证的路径（公开接口）
+    // 不需要认证的路径（仅限登录注册相关）
     private static final List<String> EXCLUDE_PATHS = Arrays.asList(
-            // 用户相关
+            // 用户登录注册相关
             "/user/login",
             "/user/register",
             "/user/sendRegisterCode",
@@ -36,33 +36,7 @@ public class JwtInterceptor implements HandlerInterceptor {
             "/user/sendCode",
             "/user/checkCode",
             "/user/resetPassword",
-            "/user/logout",
-            // 配置相关
-            "/config/list",
-            "/config/getByKey",
-            // 公开数据接口
-            "/hospital/list",
-            "/hospital/hot",
-            "/hospital/detail",
-            "/hospital/search",
-            "/department/primary",
-            "/department/secondary",
-            "/department/tree",
-            "/doctor",
-            "/doctors",
-            "/department",
-            "/hospital",
-            "/article/list",
-            "/article/hot",
-            "/article/detail",
-            "/article/search",
-            "/disease/list",
-            "/disease/hot",
-            "/disease/detail",
-            "/disease/search",
-            // 文件上传
-            "/file/uploadAvatar",
-            // 支付宝回调
+            // 支付宝回调（需外部回调）
             "/alipay/notifyUrl",
             "/alipay/returnUrl",
             // 静态资源

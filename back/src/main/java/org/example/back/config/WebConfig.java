@@ -46,22 +46,18 @@ public class WebConfig implements WebMvcConfigurer {
         registry.addInterceptor(jwtInterceptor)
                 .addPathPatterns("/**")
                 .excludePathPatterns(
+                        // 用户登录注册相关
                         "/user/login",
                         "/user/register",
-                        "/config/**",
-                        "/hospital/**",
-                        "/department/**",
-                        "/doctor/**",
-                        "/doctors/**",
-                        "/schedule/**",
-                        "/article/**",
-                        "/disease/**",
-                        "/schedule/**",
-                        "/search/**",
+                        "/user/sendRegisterCode",
+                        "/user/verifyPhone",
+                        "/user/sendCode",
+                        "/user/checkCode",
+                        "/user/resetPassword",
+                        // 支付宝回调（需外部回调）
                         "/alipay/notifyUrl",
                         "/alipay/returnUrl",
-                        "/payment/callback",
-                        "/file/**",
+                        // 静态资源
                         "/uploads/**"
                 );
     }
