@@ -11,7 +11,6 @@ import org.example.back.mapper.AppointmentMapper;
 import org.example.back.mapper.ConsultMapper;
 import org.example.back.mapper.PaymentFlowMapper;
 import org.example.back.mapper.ScheduleMapper;
-import org.example.back.service.MessageService;
 import org.example.back.service.PaymentFlowService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -33,9 +32,6 @@ public class PaymentFlowServiceImpl extends ServiceImpl<PaymentFlowMapper, Payme
 
     @Autowired
     private ScheduleMapper scheduleMapper;
-
-    @Autowired
-    private MessageService messageService;
 
     @Override
     public void createByOrderNo(String orderNo) {
@@ -102,12 +98,6 @@ public class PaymentFlowServiceImpl extends ServiceImpl<PaymentFlowMapper, Payme
             throw new RuntimeException("该订单已支付");
         }
 
-        // 清理旧的未支付记录（重复点击支付时避免 getOne 查到多条）
-        LambdaQueryWrapper<PaymentFlow> preClean = new LambdaQueryWrapper<>();
-        preClean.eq(PaymentFlow::getBusinessOrderNo, appointment.getOrderNo())
-                .eq(PaymentFlow::getPayStatus, 0);
-        this.remove(preClean);
-
         PaymentFlow flow = new PaymentFlow();
         flow.setBusinessOrderNo(appointment.getOrderNo());
         flow.setBusinessType(1);
@@ -132,9 +122,7 @@ public class PaymentFlowServiceImpl extends ServiceImpl<PaymentFlowMapper, Payme
     @Override
     public Map<String, Object> callback(String orderNo, String thirdPartyTradeNo) {
         LambdaQueryWrapper<PaymentFlow> flowWrapper = new LambdaQueryWrapper<>();
-        flowWrapper.eq(PaymentFlow::getBusinessOrderNo, orderNo)
-                   .orderByDesc(PaymentFlow::getCreateTime)
-                   .last("LIMIT 1");
+        flowWrapper.eq(PaymentFlow::getBusinessOrderNo, orderNo);
         PaymentFlow flow = this.getOne(flowWrapper);
         if (flow == null) {
             throw new RuntimeException("支付流水不存在");
@@ -176,11 +164,6 @@ public class PaymentFlowServiceImpl extends ServiceImpl<PaymentFlowMapper, Payme
                         .set(Consult::getPayTime, now)
                         .set(Consult::getUpdateTime, now);
             consultMapper.update(null, consultUpdate);
-
-            // 发送系统消息：咨询支付成功
-            messageService.sendSystemMsg(consult.getUserId(), "咨询支付成功",
-                    String.format("您的电话咨询订单已支付成功。就诊人：%s，支付金额：¥%s，订单号：%s",
-                            consult.getPatientName(), consult.getAmount(), orderNo));
 
             Map<String, Object> result = new HashMap<>();
             result.put("orderNo", orderNo);
@@ -224,12 +207,6 @@ public class PaymentFlowServiceImpl extends ServiceImpl<PaymentFlowMapper, Payme
                   .set(Appointment::getPayTime, now)
                   .set(Appointment::getUpdateTime, now);
         appointmentMapper.update(null, apptUpdate);
-
-        // 发送系统消息：挂号支付成功
-        messageService.sendSystemMsg(appointment.getUserId(), "挂号支付成功",
-                String.format("您的挂号订单已支付成功。就诊人：%s，就诊日期：%s，时间段：%s，支付金额：¥%s，订单号：%s",
-                        appointment.getPatientName(), appointment.getAppointmentDate(),
-                        appointment.getAppointmentTime(), appointment.getAmount(), orderNo));
 
         Map<String, Object> result = new HashMap<>();
         result.put("orderNo", orderNo);
