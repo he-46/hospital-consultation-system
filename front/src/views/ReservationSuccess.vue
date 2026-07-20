@@ -14,9 +14,17 @@
             <span class="label">订单号</span>
             <span class="value">{{ orderNo }}</span>
           </div>
-          <div class="info-row">
+          <div class="info-row" v-if="tradeNo">
             <span class="label">流水号</span>
             <span class="value">{{ tradeNo }}</span>
+          </div>
+          <div class="info-row" v-if="order.patientName">
+            <span class="label">就诊人</span>
+            <span class="value">{{ order.patientName }}</span>
+          </div>
+          <div class="info-row" v-if="order.patientPhone">
+            <span class="label">联系电话</span>
+            <span class="value">{{ order.patientPhone }}</span>
           </div>
           <div class="info-row" v-if="order.appointmentDate">
             <span class="label">就诊时间</span>
@@ -24,11 +32,19 @@
           </div>
           <div class="info-row" v-if="order.hospitalName">
             <span class="label">就诊医院</span>
-            <span class="value">{{ order.hospitalName }}</span>
+            <span class="value">{{ order.hospitalName }}（{{ order.hospitalLevel }}）</span>
           </div>
           <div class="info-row" v-if="order.doctorName">
             <span class="label">就诊医生</span>
-            <span class="value">{{ order.doctorName }}</span>
+            <span class="value">{{ order.doctorName }}（{{ order.doctorTitle }}）</span>
+          </div>
+          <div class="info-row" v-if="order.diseaseDesc">
+            <span class="label">病情描述</span>
+            <span class="value">{{ order.diseaseDesc }}</span>
+          </div>
+          <div class="info-row" v-if="order.amount">
+            <span class="label">挂号费用</span>
+            <span class="value price">¥{{ order.amount }}</span>
           </div>
         </div>
 
@@ -48,12 +64,13 @@
 import { ref, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 import { getAppointmentDetail } from '@/api/appointment'
+import { CircleCheckFilled } from '@element-plus/icons-vue'
 import Header from '@/components/Header.vue'
 import Footer from '@/components/Footer.vue'
 
 export default {
   name: 'ReservationSuccess',
-  components: { Header, Footer },
+  components: { Header, Footer, CircleCheckFilled },
   setup() {
     const route = useRoute()
     const orderNo = ref(route.query.orderNo || '')
@@ -64,11 +81,16 @@ export default {
       try {
         const res = await getAppointmentDetail(route.params.id)
         const data = res.data
+        const appt = data.appointment || {}
         order.value = {
-          ...data.appointment,
+          ...appt,
           doctorName: data.doctorName,
           doctorTitle: data.doctorTitle,
-          hospitalName: data.hospitalName
+          hospitalName: data.hospitalName,
+          hospitalLevel: data.hospitalLevel
+        }
+        if (!orderNo.value) {
+          orderNo.value = appt.orderNo || ''
         }
       } catch (error) {
         console.error(error)
@@ -111,9 +133,10 @@ export default {
       border-bottom: 1px solid #eee;
 
       &:last-child { border-bottom: none; }
-      .label { width: 80px; color: #999; font-size: 14px; }
+      .label { width: 80px; color: #999; font-size: 14px; flex-shrink: 0; }
       .value { font-size: 14px; color: #333; word-break: break-all; }
       .highlight { color: #1e88e5; font-weight: 500; }
+      .price { color: #f57c00; font-weight: bold; }
     }
   }
 

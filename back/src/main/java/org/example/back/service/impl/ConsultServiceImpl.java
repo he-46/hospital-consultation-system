@@ -25,6 +25,7 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Random;
 import java.util.UUID;
 
 @Service
@@ -54,7 +55,7 @@ public class ConsultServiceImpl extends ServiceImpl<ConsultMapper, Consult> impl
         BigDecimal amount = doctor.getPrice() != null ? doctor.getPrice() : BigDecimal.ZERO;
 
         Consult consult = new Consult();
-        consult.setOrderNo(UUID.randomUUID().toString().replace("-",""));
+        consult.setOrderNo(generateOrderNo());
         consult.setUserId(userId);
         consult.setDoctorId(dto.getDoctorId());
         consult.setPatientName(dto.getPatientName());
@@ -176,5 +177,15 @@ public class ConsultServiceImpl extends ServiceImpl<ConsultMapper, Consult> impl
         result.put("thirdPartyTradeNo", tradeNo);
         result.put("paySuccessTime", now.format(java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")));
         return result;
+    }
+
+    private String generateOrderNo() {
+        String chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+        StringBuilder sb = new StringBuilder();
+        Random random = new Random();
+        for (int i = 0; i < 5; i++) {
+            sb.append(chars.charAt(random.nextInt(chars.length())));
+        }
+        return "CONSUL" + System.currentTimeMillis() + sb;
     }
 }

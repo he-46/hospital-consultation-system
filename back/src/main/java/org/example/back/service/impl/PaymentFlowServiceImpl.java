@@ -34,6 +34,51 @@ public class PaymentFlowServiceImpl extends ServiceImpl<PaymentFlowMapper, Payme
     private ScheduleMapper scheduleMapper;
 
     @Override
+    public void createByOrderNo(String orderNo) {
+        // 先查挂号订单
+        Appointment appointment = appointmentMapper.selectOne(
+                new LambdaQueryWrapper<Appointment>().eq(Appointment::getOrderNo, orderNo));
+        if (appointment != null) {
+            PaymentFlow exist = this.getOne(
+                    new LambdaQueryWrapper<PaymentFlow>().eq(PaymentFlow::getBusinessOrderNo, orderNo));
+            if (exist != null) {
+                return;
+            }
+            PaymentFlow flow = new PaymentFlow();
+            flow.setBusinessOrderNo(orderNo);
+            flow.setBusinessType(1);
+            flow.setPayMethod(1);
+            flow.setActualAmount(appointment.getAmount());
+            flow.setPayStatus(0);
+            flow.setCreateTime(LocalDateTime.now());
+            this.save(flow);
+            return;
+        }
+
+        // 再查咨询订单
+        Consult consult = consultMapper.selectOne(
+                new LambdaQueryWrapper<Consult>().eq(Consult::getOrderNo, orderNo));
+        if (consult != null) {
+            PaymentFlow exist = this.getOne(
+                    new LambdaQueryWrapper<PaymentFlow>().eq(PaymentFlow::getBusinessOrderNo, orderNo));
+            if (exist != null) {
+                return;
+            }
+            PaymentFlow flow = new PaymentFlow();
+            flow.setBusinessOrderNo(orderNo);
+            flow.setBusinessType(2);
+            flow.setPayMethod(1);
+            flow.setActualAmount(consult.getAmount());
+            flow.setPayStatus(0);
+            flow.setCreateTime(LocalDateTime.now());
+            this.save(flow);
+            return;
+        }
+
+        throw new RuntimeException("订单不存在");
+    }
+
+    @Override
     public Map<String, Object> pay(Long appointmentId, Integer payMethod, Long userId) {
         Appointment appointment = appointmentMapper.selectById(appointmentId);
         if (appointment == null) {
@@ -71,6 +116,11 @@ public class PaymentFlowServiceImpl extends ServiceImpl<PaymentFlowMapper, Payme
 
     @Override
     public Map<String, Object> callback(String orderNo) {
+        return callback(orderNo, null);
+    }
+
+    @Override
+    public Map<String, Object> callback(String orderNo, String thirdPartyTradeNo) {
         LambdaQueryWrapper<PaymentFlow> flowWrapper = new LambdaQueryWrapper<>();
         flowWrapper.eq(PaymentFlow::getBusinessOrderNo, orderNo);
         PaymentFlow flow = this.getOne(flowWrapper);
@@ -81,11 +131,14 @@ public class PaymentFlowServiceImpl extends ServiceImpl<PaymentFlowMapper, Payme
         if (flow.getPayStatus() == 1) {
             Map<String, Object> result = new HashMap<>();
             result.put("orderNo", orderNo);
+            result.put("thirdPartyTradeNo", flow.getThirdPartyTradeNo());
             result.put("message", "已支付，无需重复回调");
             return result;
         }
 
-        String thirdPartyTradeNo = "SIM" + LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMddHHmmss")) + UUID.randomUUID().toString().substring(0, 6).toUpperCase();
+        if (thirdPartyTradeNo == null || thirdPartyTradeNo.isEmpty()) {
+            thirdPartyTradeNo = "SIM" + LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMddHHmmss")) + UUID.randomUUID().toString().substring(0, 6).toUpperCase();
+        }
         LocalDateTime now = LocalDateTime.now();
 
         // 更新支付流水

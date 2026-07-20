@@ -14,6 +14,18 @@
             <span class="label">订单号</span>
             <span class="value">{{ orderNo }}</span>
           </div>
+          <div class="info-row" v-if="tradeNo">
+            <span class="label">流水号</span>
+            <span class="value">{{ tradeNo }}</span>
+          </div>
+          <div class="info-row" v-if="order.patientName">
+            <span class="label">咨询人</span>
+            <span class="value">{{ order.patientName }}</span>
+          </div>
+          <div class="info-row" v-if="order.patientPhone">
+            <span class="label">联系电话</span>
+            <span class="value">{{ order.patientPhone }}</span>
+          </div>
           <div class="info-row" v-if="order.doctorName">
             <span class="label">咨询医生</span>
             <span class="value">{{ order.doctorName }}（{{ order.doctorTitle }}）</span>
@@ -25,6 +37,10 @@
           <div class="info-row" v-if="order.appointmentTime">
             <span class="label">咨询时间</span>
             <span class="value highlight">{{ order.appointmentTime }}</span>
+          </div>
+          <div class="info-row" v-if="order.diseaseDesc">
+            <span class="label">病情描述</span>
+            <span class="value">{{ order.diseaseDesc }}</span>
           </div>
           <div class="info-row" v-if="order.amount">
             <span class="label">咨询费用</span>
@@ -48,17 +64,23 @@
 import { ref, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 import { getConsultDetail } from '@/api/consult'
+import { CircleCheckFilled } from '@element-plus/icons-vue'
 import Header from '@/components/Header.vue'
 import Footer from '@/components/Footer.vue'
 
 const route = useRoute()
 const orderNo = ref(route.query.orderNo || '')
+const tradeNo = ref(route.query.tradeNo || '')
 const order = ref({})
 
 onMounted(async () => {
   try {
     const res = await getConsultDetail(route.params.id)
-    order.value = res.data || {}
+    const data = res.data || {}
+    order.value = data
+    if (!orderNo.value) {
+      orderNo.value = data.orderNo || ''
+    }
   } catch (error) {
     console.error(error)
   }
@@ -80,7 +102,7 @@ onMounted(async () => {
     .info-row {
       display: flex; padding: 10px 0; border-bottom: 1px solid #eee;
       &:last-child { border-bottom: none; }
-      .label { width: 80px; color: #999; font-size: 14px; }
+      .label { width: 80px; color: #999; font-size: 14px; flex-shrink: 0; }
       .value { font-size: 14px; color: #333; }
       .highlight { color: #1e88e5; font-weight: 500; }
       .price { color: #f57c00; font-weight: bold; }
