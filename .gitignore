@@ -1,0 +1,44 @@
+# Database (可选 - 根据需要忽略)
+# 数据库导入/
+
+# Config files (敏感配置)
+*.yml
+*.yaml
+*.properties
+!*.example.yml
+!*.example.properties
+
+# Back-end config (含数据库密码等敏感信息)
+back/src/main/resources/application.yml
+back/src/main/resources/*.yml
+back/src/main/resources/*.yaml
+back/src/main/resources/*.properties
+back/src/main/resources/*.xml
+
+# Temporary files
+*.tmp
+*.bak
+*.swp
+*~
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE
+.idea/
+*.iml
+.vscode/
+
+# Build outputs
+*/target/
+*/dist/
+*/node_modules/
+*/.cache/
+
+# Redis
+dump.rdb
+
+# Uploads
+uploads/
+back/src/main/resources/application.yml
