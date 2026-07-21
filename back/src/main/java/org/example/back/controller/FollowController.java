@@ -53,7 +53,28 @@ public class FollowController {
             @RequestParam Integer followType,
             @RequestParam Long followId
     ){
-        Boolean flag = followService.checkFollow(followType, followId);
+        Long userId = UserContext.getUserId();
+        Boolean flag = followService.checkFollow(followType, followId, userId);
         return Result.success(flag);
+    }
+
+    @GetMapping("/record-id")
+    public Result<Long> getRecordId(
+            @RequestParam Integer followType,
+            @RequestParam Long followId
+    ){
+        Long userId = UserContext.getUserId();
+        Long recordId = followService.getFollowRecordId(followType, followId, userId);
+        return Result.success(recordId);
+    }
+
+    @DeleteMapping("/unfollow")
+    public Result<Void> unfollow(
+            @RequestParam Integer followType,
+            @RequestParam Long followId
+    ){
+        Long userId = UserContext.getUserId();
+        followService.unfollowByTarget(followType, followId, userId);
+        return Result.success("取消关注成功", null);
     }
 }

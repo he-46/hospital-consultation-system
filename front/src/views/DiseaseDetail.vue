@@ -58,7 +58,7 @@ import { ref, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { getDiseaseDetail } from '@/api/disease'
-import { addFollow, delFollow, getFollows, checkFollow } from '@/api/follow'
+import { addFollow, checkFollow, unfollowByTarget } from '@/api/follow'
 import Header from '@/components/Header.vue'
 import Footer from '@/components/Footer.vue'
 
@@ -70,7 +70,6 @@ export default {
     const router = useRouter()
     const disease = ref({})
     const isFollowed = ref(false)
-    const myFollowId = ref(null)
 
     const loadData = async () => {
       try {
@@ -91,18 +90,6 @@ export default {
       }
     }
 
-    const loadMyFollowId = async () => {
-      if (!localStorage.getItem('token')) return
-      try {
-        const res = await getFollows({ page: 1, size: 100, followType: 3 })
-        const records = res.data.records || []
-        const match = records.find(r => String(r.followId) === String(route.params.id))
-        myFollowId.value = match ? match.id : null
-      } catch (err) {
-        console.error(err)
-      }
-    }
-
     const handleFollow = async () => {
       if (!localStorage.getItem('token')) {
         router.push('/login?redirect=' + encodeURIComponent(route.fullPath))
@@ -113,25 +100,18 @@ export default {
       ElMessage.success('关注成功')
       isFollowed.value = true
       disease.value.followCount = (disease.value.followCount || 0) + 1
-      loadMyFollowId()
     }
 
     const handleUnfollow = async () => {
-      if (!myFollowId.value) {
-        ElMessage.error('未找到关注记录')
-        return
-      }
-      await delFollow(myFollowId.value)
+      await unfollowByTarget(3, route.params.id)
       ElMessage.success('已取消关注')
       isFollowed.value = false
-      myFollowId.value = null
       if (disease.value.followCount > 0) disease.value.followCount--
     }
 
     onMounted(() => {
       loadData()
       loadFollowStatus()
-      loadMyFollowId()
     })
 
     return { disease, isFollowed, handleFollow, handleUnfollow }

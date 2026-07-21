@@ -45,3 +45,12 @@ export function getFollowRecordId(followType, followId) {
         params: { followType, followId }
     })
 }
+
+// 按类型+目标ID直接取消关注（一步到位）
+export function unfollowByTarget(followType, followId) {
+    return request({
+        url: '/follows/unfollow',
+        method: 'delete',
+        params: { followType, followId }
+    })
+}

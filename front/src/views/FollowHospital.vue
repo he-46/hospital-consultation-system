@@ -32,7 +32,7 @@
                 <p class="intro">{{ item.hospitalIntro || '暂无介绍' }}</p>
                 <div class="card-footer">
                   <span class="time">{{ item.createTime }}</span>
-                  <el-button type="danger" size="small" link @click="handleUnfollow(item.id)">取消关注</el-button>
+                  <el-button type="danger" size="small" link @click.stop="handleUnfollow(item.id)">取消关注</el-button>
                 </div>
               </div>
             </div>

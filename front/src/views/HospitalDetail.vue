@@ -69,7 +69,7 @@
 import { ref, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { getHospitalDetail } from '@/api/hospital'
-import { addFollow, delFollow, getFollows, checkFollow } from '@/api/follow'
+import { addFollow, checkFollow, unfollowByTarget } from '@/api/follow'
 import { ElMessage } from 'element-plus'
 import Header from '@/components/Header.vue'
 import Footer from '@/components/Footer.vue'
@@ -84,7 +84,6 @@ export default {
     const departments = ref([])
     const doctors = ref([])
     const isFollow = ref(false)
-    const myFollowId = ref(null)
 
     const loadData = async () => {
       try {
@@ -108,18 +107,6 @@ export default {
       }
     }
 
-    const loadMyFollowId = async () => {
-      if (!localStorage.getItem('token')) return
-      try {
-        const res = await getFollows({ page: 1, size: 100, followType: 1 })
-        const records = res.data.records || []
-        const match = records.find(r => String(r.followId) === String(route.params.id))
-        myFollowId.value = match ? match.id : null
-      } catch (err) {
-        console.error(err)
-      }
-    }
-
     const handleFollow = async () => {
       if (!localStorage.getItem('token')) {
         router.push('/login?redirect=' + encodeURIComponent(route.fullPath))
@@ -127,14 +114,9 @@ export default {
       }
       if (isFollow.value) {
         // 取消关注
-        if (!myFollowId.value) {
-          ElMessage.error('未找到关注记录')
-          return
-        }
-        await delFollow(myFollowId.value)
+        await unfollowByTarget(1, route.params.id)
         ElMessage.success('已取消关注')
         isFollow.value = false
-        myFollowId.value = null
         if (hospital.value.followCount > 0) hospital.value.followCount--
       } else {
         // 关注
@@ -142,14 +124,12 @@ export default {
         ElMessage.success('关注成功')
         isFollow.value = true
         hospital.value.followCount = (hospital.value.followCount || 0) + 1
-        loadMyFollowId()
       }
     }
 
     onMounted(() => {
       loadData()
       loadFollowStatus()
-      loadMyFollowId()
     })
 
     return { hospital, departments, doctors, isFollow, handleFollow }
