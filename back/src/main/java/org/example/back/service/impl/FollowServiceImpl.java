@@ -132,8 +132,7 @@ public class FollowServiceImpl extends ServiceImpl<FollowMapper, Follow> impleme
     }
 
     @Override
-    public Boolean checkFollow(Integer followType, Long followId) {
-        Long userId = UserContext.getUserId();
+    public Boolean checkFollow(Integer followType, Long followId, Long userId) {
         Long count = baseMapper.selectCount(Wrappers.<Follow>lambdaQuery()
                 .eq(Follow::getUserId, userId)
                 .eq(Follow::getFollowType, followType)
@@ -142,13 +141,47 @@ public class FollowServiceImpl extends ServiceImpl<FollowMapper, Follow> impleme
     }
 
     @Override
-    public Long getFollowRecordId(Integer followType, Long followId) {
-        Long userId = UserContext.getUserId();
+    public Long getFollowRecordId(Integer followType, Long followId, Long userId) {
         Follow follow = baseMapper.selectOne(Wrappers.<Follow>lambdaQuery()
                 .eq(Follow::getUserId, userId)
                 .eq(Follow::getFollowType, followType)
                 .eq(Follow::getFollowId, followId)
                 .last("LIMIT 1"));
         return follow != null ? follow.getId() : 0L;
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public void unfollowByTarget(Integer followType, Long followId, Long userId) {
+        Follow follow = baseMapper.selectOne(Wrappers.<Follow>lambdaQuery()
+                .eq(Follow::getUserId, userId)
+                .eq(Follow::getFollowType, followType)
+                .eq(Follow::getFollowId, followId)
+                .last("LIMIT 1"));
+        if (follow == null) {
+            throw new BusinessException(40000, "未找到关注记录");
+        }
+        Integer type = follow.getFollowType();
+        Long targetId = follow.getFollowId();
+        baseMapper.deleteById(follow.getId());
+
+        // 原子更新关注数 -1
+        switch (type) {
+            case 1:
+                hospitalMapper.update(null, Wrappers.<Hospital>lambdaUpdate()
+                        .eq(Hospital::getId, targetId)
+                        .setSql("follow_count = follow_count - 1"));
+                break;
+            case 2:
+                doctorMapper.update(null, Wrappers.<Doctor>lambdaUpdate()
+                        .eq(Doctor::getId, targetId)
+                        .setSql("follow_count = follow_count - 1"));
+                break;
+            case 3:
+                diseaseMapper.update(null, Wrappers.<Disease>lambdaUpdate()
+                        .eq(Disease::getId, targetId)
+                        .setSql("follow_count = follow_count - 1"));
+                break;
+        }
     }
 }
